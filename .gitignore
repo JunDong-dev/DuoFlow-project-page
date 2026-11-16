@@ -1,0 +1,6 @@
+.DS_Store
+._*
+*.tmp
+*.bak
+index.backup*.html
+index_cn.html

@@ -1,0 +1,1850 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index,follow">
+  <meta name="description" content="DuoFlow jointly generates synchronized speech and full-body motion with hierarchical motion and vocal-style control.">
+  <link rel="canonical" href="https://jundong-dev.github.io/DuoFlow-project-page/">
+  <title>DuoFlow · Controllable Joint Speech–Motion Generation</title>
+  <style>
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: #f7f9fc; color: #192234; }
+    #motionspeech-site {
+      --ink: #192234;
+      --muted: #617086;
+      --line: #dce3ee;
+      --paper: #ffffff;
+      --wash: #f2f6fb;
+      --brand: #386fdc;
+      --brand-dark: #244fa8;
+      --brand-soft: #e7efff;
+      --motion: #15966e;
+      --motion-soft: #e5f7f0;
+      --voice: #8254c7;
+      --voice-soft: #f1eafd;
+      --audio: #db851d;
+      --audio-soft: #fff2df;
+      --coral: #d75568;
+      --deep: #0c1328;
+      --deep-2: #121d3d;
+      --cyan: #52d7ff;
+      --violet: #a987ff;
+      --shadow: 0 16px 44px rgba(38, 59, 91, .08);
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 8% 4%, rgba(82, 215, 255, .08), transparent 25%),
+        radial-gradient(circle at 92% 34%, rgba(169, 135, 255, .08), transparent 28%),
+        linear-gradient(180deg, #f7f9fc 0%, #f3f7ff 58%, #f9faff 100%);
+    }
+    #motionspeech-site * { box-sizing: border-box; }
+    #motionspeech-site button { font: inherit; }
+    #motionspeech-site a { color: inherit; }
+
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 58px;
+      padding: 11px max(22px, calc((100vw - 1180px) / 2));
+      background: rgba(247, 250, 255, .78);
+      border-bottom: 1px solid rgba(220, 227, 238, .9);
+      backdrop-filter: blur(18px) saturate(140%);
+      box-shadow: 0 8px 28px rgba(28, 52, 96, .08);
+    }
+    .wordmark { font-weight: 900; letter-spacing: -.45px; text-decoration: none; }
+    .wordmark i { color: var(--brand); font-style: normal; }
+    .nav-links { display: flex; gap: 22px; }
+    .nav-links a { color: #516076; font-size: 13px; font-weight: 750; text-decoration: none; }
+    .nav-links a:hover { color: var(--brand); }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 88px 24px 78px;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 74% 18%, rgba(82, 215, 255, .20), transparent 24%),
+        radial-gradient(circle at 20% 78%, rgba(21, 150, 110, .12), transparent 27%),
+        linear-gradient(135deg, #eaf2ff 0%, #fbfcff 48%, #f4efff 100%);
+      isolation: isolate;
+    }
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .hero::before { width: 380px; height: 380px; left: -245px; top: -225px; border: 68px solid rgba(56, 111, 220, .07); }
+    .hero::after { width: 430px; height: 430px; right: -285px; bottom: -305px; border: 76px solid rgba(130, 84, 199, .08); }
+    .hero-inner::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      width: min(65vw, 700px);
+      height: 270px;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -43%) perspective(900px) rotateX(58deg) rotateZ(-8deg);
+      border: 1px solid rgba(56, 111, 220, .16);
+      border-radius: 50%;
+      box-shadow: 0 0 0 22px rgba(56, 111, 220, .035), 0 0 80px rgba(82, 215, 255, .12);
+      animation: orbit 10s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; z-index: 1; max-width: 1040px; margin: auto; text-align: center; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding: 8px 12px;
+      border: 1px solid #cfdcf7;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .72);
+      color: var(--brand-dark);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--motion); box-shadow: 0 0 0 4px rgba(21, 150, 110, .12); }
+    h1 {
+      max-width: 1040px;
+      margin: 0 auto 21px;
+      color: var(--ink);
+      font-size: clamp(39px, 5.1vw, 64px);
+      line-height: 1.045;
+      letter-spacing: -.052em;
+    }
+    h1 .gradient {
+      background: linear-gradient(90deg, var(--brand), var(--voice));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .lead { max-width: 820px; margin: 0 auto; color: #53647c; font-size: 18px; line-height: 1.75; }
+    .hero-pills { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 15px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: #3c4d65;
+      box-shadow: 0 5px 16px rgba(38, 59, 91, .06);
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: transform .2s ease, box-shadow .2s ease;
+      cursor: default;
+      appearance: none;
+    }
+    .pill:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(38, 59, 91, .12); }
+    .pill.motion { border-color: #a8ddca; background: #eefaf6; color: #0f7255; }
+    .pill.voice { border-color: #d5c3f1; background: #f7f2ff; color: #6840a4; }
+    .pill.disabled { color: #6f7b8d; cursor: default; }
+    .pill .coming-soon { color: #7b8798; font-size: 10px; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
+    .pill .github-icon { width: 17px; height: 17px; fill: currentColor; }
+
+    .shell { max-width: 1180px; margin: auto; padding: 0 24px 94px; }
+    .section { padding-top: 82px; scroll-margin-top: 56px; }
+    .section-heading { max-width: 900px; margin-bottom: 28px; }
+    .kicker { display: block; margin-bottom: 8px; color: var(--brand); font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+    .section-heading h2 { margin: 0 0 10px; font-size: clamp(29px, 4vw, 43px); line-height: 1.12; letter-spacing: -.037em; }
+    .section-heading p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.75; }
+
+    .abstract-card,
+    .figure-card,
+    .result-card,
+    .demo-panel,
+    .asset-card {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+      transform-style: preserve-3d;
+      transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+    }
+    .abstract-card:hover, .result-card:hover, .asset-card:hover { transform: translateY(-4px); border-color: #c3d3ef; box-shadow: 0 24px 58px rgba(38, 59, 91, .13); }
+    .abstract-card { padding: 27px 29px; }
+    .abstract-card h3 { margin: 0 0 12px; font-size: 18px; }
+    .abstract-card p { margin: 0; color: #55667c; font-size: 15px; line-height: 1.8; }
+    .figure-card { margin: 26px 0 0; padding: 12px 12px 16px; }
+    .dataset-figure { max-width: 580px; margin-left: auto; margin-right: auto; }
+    .figure-card img { display: block; width: 100%; height: auto; border-radius: 13px; background: #fff; }
+    .figure-card figcaption { max-width: 1000px; margin: 14px auto 0; padding: 0 10px; color: #67758a; font-size: 13px; line-height: 1.65; text-align: center; }
+    .figure-card figcaption strong { color: #33445c; }
+
+    .contribution-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 22px; }
+    .contributions-lead { margin: 28px 0 0; color: #3e526f; font-size: 16px; font-weight: 850; }
+    .contribution-card {
+      position: relative;
+      min-height: 190px;
+      padding: 24px 22px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 12px 34px rgba(38, 59, 91, .06);
+      transform-style: preserve-3d;
+      transition: transform .32s ease, box-shadow .32s ease, border-color .32s ease;
+    }
+    .contribution-card:hover { transform: translateY(-7px) rotateX(1.2deg) rotateY(-1deg); border-color: #b7ccef; box-shadow: 0 24px 45px rgba(38, 59, 91, .14); }
+    .contribution-card::before { content: attr(data-number); position: absolute; right: 14px; top: 3px; color: rgba(56, 111, 220, .09); font-size: 68px; font-weight: 900; line-height: 1; }
+    .contribution-card h3 { position: relative; margin: 0 0 10px; font-size: 17px; }
+    .contribution-card p { position: relative; margin: 0; color: #5d6d82; font-size: 14px; line-height: 1.72; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 13px; margin: 20px 0 0; }
+    .stat { position: relative; overflow: hidden; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(145deg, #fff, #f5f8fd); box-shadow: 0 10px 28px rgba(38, 59, 91, .06); transition: transform .3s ease, box-shadow .3s ease; }
+    .stat::after { content: ""; position: absolute; width: 84px; height: 84px; right: -34px; top: -40px; border: 1px solid rgba(82, 215, 255, .28); border-radius: 50%; }
+    .stat:hover { transform: translateY(-5px); box-shadow: 0 18px 32px rgba(38, 59, 91, .12); }
+    .stat strong { display: block; margin-bottom: 3px; color: var(--brand-dark); font-size: 28px; letter-spacing: -.04em; }
+    .stat span { color: #6b788b; font-size: 12px; font-weight: 750; }
+
+    .method-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+    .method-card { padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(145deg, #fff, #f6f8fc); }
+    .method-card .index { display: inline-grid; place-items: center; width: 31px; height: 31px; margin-bottom: 11px; border-radius: 9px; background: var(--brand-soft); color: var(--brand-dark); font-size: 12px; font-weight: 900; }
+    .method-card:nth-child(2) .index { background: var(--motion-soft); color: #0d7254; }
+    .method-card:nth-child(3) .index { background: var(--voice-soft); color: #6740a3; }
+    .method-card h3 { margin: 0 0 7px; font-size: 15px; }
+    .method-card p { margin: 0; color: #617087; font-size: 13px; line-height: 1.68; }
+
+    .result-card { padding: 22px; }
+    .result-card h3 { margin: 0 0 8px; font-size: 19px; }
+    .result-card > p { margin: 0 0 16px; color: #647287; font-size: 14px; line-height: 1.7; }
+    .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 13px; }
+    table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+    th, td { padding: 11px 10px; border-bottom: 1px solid #e7ebf2; text-align: center; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; font-weight: 780; }
+    thead th { background: #f2f5fa; color: #47566d; font-weight: 850; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr.ours td { background: #eef4ff; color: #253f77; }
+    td.best { color: var(--brand-dark); font-weight: 900; }
+    td.pending { color: var(--coral); font-weight: 900; }
+    .table-note { margin: 12px 2px 0 !important; color: #748095 !important; font-size: 11px !important; line-height: 1.6 !important; }
+    .table-tag { color: var(--brand-dark); font-size: .82em; font-weight: 900; }
+    .speed-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+    .speed-card { position: relative; overflow: hidden; padding: 15px; border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(145deg, #fbfdff, #edf3ff); }
+    .speed-card::before { content: ""; position: absolute; width: 90px; height: 90px; right: -35px; bottom: -45px; border: 1px solid rgba(130, 84, 199, .18); border-radius: 50%; }
+    .speed-card strong { display: block; margin-bottom: 8px; color: #314b82; font-size: 13px; }
+    .speed-values { display: flex; gap: 11px; flex-wrap: wrap; color: #62728a; font-size: 11px; font-variant-numeric: tabular-nums; }
+    .speed-values b { color: var(--brand-dark); font-size: 17px; }
+
+    .demo-section { padding-top: 86px; scroll-margin-top: 56px; }
+    .demo-overview { margin: 0 auto 28px; padding: 15px 18px; border: 1px solid #c9d9f4; border-radius: 14px; background: linear-gradient(105deg, rgba(238, 247, 255, .92), rgba(249, 244, 255, .92)); color: #536580; font-size: 13px; line-height: 1.7; box-shadow: 0 12px 28px rgba(38, 59, 91, .07); }
+    .demo-overview strong { color: #304f8f; }
+    .demo-heading { display: grid; grid-template-columns: 58px 1fr; gap: 16px; align-items: start; margin-bottom: 22px; }
+    .demo-number { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 16px; background: var(--brand-soft); color: var(--brand-dark); font-size: 18px; font-weight: 900; }
+    .demo-heading h2 { margin: 0 0 7px; font-size: clamp(26px, 3.5vw, 38px); letter-spacing: -.03em; }
+    .demo-heading p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .demo-panel { overflow: hidden; }
+    .panel-top { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 14px 16px; border-bottom: 1px solid var(--line); background: #fbfcfe; }
+    .sample-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sample-tab,
+    .control {
+      border: 1px solid #cad4e3;
+      border-radius: 10px;
+      background: #fff;
+      color: #4b5b72;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 820;
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .sample-tab { padding: 8px 11px; }
+    .sample-tab:hover,
+    .control:hover { transform: translateY(-1px); border-color: #9eb5dc; box-shadow: 0 7px 16px rgba(38, 59, 91, .1); }
+    .sample-tab.active { border-color: #8caee9; background: #eaf1ff; color: var(--brand-dark); }
+    .control { padding: 9px 12px; }
+    .control.primary { border-color: var(--brand); background: var(--brand); color: #fff; }
+    .prompt-card { margin: 14px 16px 0; padding: 12px 14px; border: 1px solid #d4def0; border-radius: 16px; background: linear-gradient(135deg, #f8faff, #f4f8ff); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9); }
+    .prompt-row { display: grid; grid-template-columns: 128px 1fr; gap: 14px; align-items: start; padding: 10px 0; color: #4d5d74; font-size: 13px; line-height: 1.62; }
+    .prompt-row + .prompt-row { border-top: 1px solid rgba(211, 221, 237, .82); }
+    .prompt-label { display: inline-flex; flex-direction: column; align-items: flex-start; align-self: start; justify-self: start; gap: 3px; padding: 6px 8px; border: 1px solid #cad9f3; border-radius: 8px; background: #eaf1ff; color: #49628d; font-size: 10px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+    .prompt-row[data-field="condition"] .prompt-label,
+    .prompt-row[data-field="motion"] .prompt-label,
+    .prompt-row[data-field="l1"] .prompt-label,
+    .prompt-row[data-field="l2"] .prompt-label { border-color: #b9e1d1; background: #e9f8f1; color: #187054; }
+    .prompt-row[data-field="voice"] .prompt-label { border-color: #d8c8f2; background: #f4efff; color: #7047a8; }
+    .prompt-value { display: block; min-width: 0; color: #40536f; }
+    .prompt-step { position: relative; display: block; margin: 0 0 7px; padding: 8px 11px 8px 35px; border: 1px solid #d7e2f2; border-radius: 10px; background: rgba(255, 255, 255, .84); color: #3d5270; box-shadow: 0 4px 12px rgba(38, 59, 91, .04); }
+    .prompt-step:last-child { margin-bottom: 0; }
+    .prompt-step::before { content: attr(data-step); position: absolute; left: 10px; top: 8px; display: grid; place-items: center; width: 17px; height: 17px; border-radius: 6px; background: #e5edff; color: var(--brand-dark); font-size: 10px; font-weight: 900; }
+    .prompt-row[data-field="condition"] .prompt-step::before,
+    .prompt-row[data-field="motion"] .prompt-step::before,
+    .prompt-row[data-field="l1"] .prompt-step::before,
+    .prompt-row[data-field="l2"] .prompt-step::before { background: #dff4ea; color: #187054; }
+    .prompt-row.is-modified { margin: 2px -6px; padding: 10px 6px; border: 1px solid #a9dbc9; border-radius: 11px; background: linear-gradient(135deg, #f1fbf6, #e8f8f1); }
+    .prompt-row.is-modified .prompt-label { border-color: #8fcdb7; background: #dff4ea; color: #187054; }
+    .prompt-modified { color: #111827; font-size: 9px; font-style: normal; letter-spacing: .05em; }
+    .prompt-diff { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 9px; align-items: stretch; width: 100%; }
+    .prompt-version { display: block; min-width: 0; padding: 8px 10px; border: 1px solid #d7e2f2; border-radius: 10px; background: rgba(255, 255, 255, .84); }
+    .prompt-version.original { border-color: #e7c7bd; background: #fff8f5; }
+    .prompt-version.updated { border-color: #b9dfd1; background: #f5fcf8; }
+    .prompt-version-label { display: block; margin-bottom: 6px; color: #68788f; font-size: 10px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+    .prompt-version.original .prompt-version-label { color: #a15d4d; }
+    .prompt-version.updated .prompt-version-label { color: #187054; }
+    .prompt-diff-content { display: block; color: #40536f; line-height: 1.62; }
+    .prompt-force-highlight { padding: 3px 5px; border-radius: 6px; background: #d9f3e5; color: #146b50; }
+    .prompt-diff-step { display: block; margin-bottom: 6px; color: #40536f; line-height: 1.62; }
+    .prompt-diff-step:last-child { margin-bottom: 0; }
+    .prompt-token.removed { padding: 1px 2px; border-radius: 4px; background: #ffe0d9; color: #a04f42; text-decoration: line-through; text-decoration-thickness: 1px; }
+    .prompt-token.added { padding: 1px 2px; border-radius: 4px; background: #d9f3e5; color: #146b50; font-weight: 750; }
+    .prompt-diff-arrow { display: grid; place-items: center; min-width: 22px; color: #7d91b2; font-size: 18px; font-weight: 900; }
+    #audcap-control .prompt-row.is-modified[data-field="voice"] { border-color: #c5a4e6; background: linear-gradient(135deg, #f7f0ff, #eee2fb); }
+    #audcap-control .prompt-row.is-modified[data-field="voice"] .prompt-label { border-color: #b994df; background: #eadbfa; color: #7047a8; }
+    #audcap-control .prompt-row[data-field="voice"] .prompt-version.original { border-color: #d4c2e8; background: #faf7ff; }
+    #audcap-control .prompt-row[data-field="voice"] .prompt-version.updated { border-color: #b994df; background: #f1e7fb; }
+    #audcap-control .prompt-row[data-field="voice"] .prompt-version.original .prompt-version-label,
+    #audcap-control .prompt-row[data-field="voice"] .prompt-version.updated .prompt-version-label { color: #7047a8; }
+    #audcap-control .prompt-row[data-field="voice"] .prompt-force-highlight { background: #eadbfa; color: #653b96; }
+    #audcap-control .prompt-row[data-field="voice"] .prompt-token.added { background: #eadbfa; color: #653b96; }
+    #audcap-control .prompt-row[data-field="voice"] .prompt-diff-arrow { color: #8c5fba; }
+    .video-grid { display: grid; gap: 14px; padding: 14px 16px 16px; }
+    .video-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .video-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .video-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .media-card { overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: #eef2f7; transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease; }
+    .media-card:hover { transform: translateY(-5px) rotateX(.8deg); border-color: #b5c8e9; box-shadow: 0 20px 34px rgba(38, 59, 91, .15); }
+    .media-card.ours { border-color: #91afe9; box-shadow: inset 0 3px 0 var(--brand); }
+    .media-title { display: flex; justify-content: space-between; gap: 10px; padding: 11px 13px; border-bottom: 1px solid var(--line); background: #fff; color: #33435a; font-size: 12px; font-weight: 900; }
+    .media-title small { color: #8a96a8; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .video-shell { position: relative; aspect-ratio: 1 / 1; background: linear-gradient(145deg, #edf1f7, #e4eaf3); }
+    .video-shell::after { content: ""; position: absolute; inset: 0; pointer-events: none; border: 1px solid rgba(82, 215, 255, .12); background: linear-gradient(115deg, transparent 25%, rgba(82, 215, 255, .05), transparent 70%); opacity: .7; }
+    .video-shell video { display: block; width: 100%; height: 100%; object-fit: contain; background: #111824; }
+    .video-placeholder {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, .92), rgba(242, 246, 252, .94)),
+        repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(56, 111, 220, .035) 10px, rgba(56, 111, 220, .035) 20px);
+      color: #6c7a8f;
+      text-align: center;
+    }
+    .video-placeholder[hidden] { display: none; }
+    .placeholder-inner { max-width: 250px; }
+    .placeholder-icon { display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto 10px; border-radius: 15px; background: var(--brand-soft); color: var(--brand); font-size: 20px; }
+    .placeholder-inner strong { display: block; margin-bottom: 5px; color: #45546a; font-size: 13px; }
+    .placeholder-inner code { display: block; color: #768397; font-size: 10px; line-height: 1.55; overflow-wrap: anywhere; }
+    .transport { display: flex; align-items: center; gap: 8px; padding: 0 16px 16px; }
+
+    .asset-card { padding: 22px; }
+    .asset-card h3 { margin: 0 0 7px; font-size: 18px; }
+    .asset-card > p { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.65; }
+    .asset-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .asset-item { padding: 13px 14px; border: 1px solid var(--line); border-radius: 12px; background: #f9fbfe; }
+    .asset-item span { display: block; margin-bottom: 5px; color: #44536a; font-size: 12px; font-weight: 850; }
+    .asset-item code { color: #6d7a8e; font-size: 10px; overflow-wrap: anywhere; }
+    .asset-tip { margin-top: 15px !important; padding: 12px 14px; border-left: 3px solid var(--motion); border-radius: 0 10px 10px 0; background: var(--motion-soft); color: #356b5a !important; }
+
+    .status-line { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-top: 18px; color: #68778d; font-size: 12px; }
+    .status-badge { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid #b8e4d4; border-radius: 999px; background: #effbf6; color: #19775a; font-weight: 850; }
+    .status-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #2ab783; box-shadow: 0 0 0 4px rgba(42, 183, 131, .12); animation: pulse 2.2s ease-in-out infinite; }
+    .status-badge.pending { border-color: #ead5a8; background: #fff9ea; color: #8b671d; }
+    .status-badge.pending::before { background: #d6a22e; box-shadow: 0 0 0 4px rgba(214, 162, 46, .12); animation: none; }
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity .65s ease, transform .65s ease; }
+    .reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+    @keyframes orbit { from { transform: translate(-50%, -43%) perspective(900px) rotateX(58deg) rotateZ(-8deg) scale(.96); } to { transform: translate(-50%, -43%) perspective(900px) rotateX(58deg) rotateZ(5deg) scale(1.03); } }
+    @keyframes pulse { 0%, 100% { transform: scale(1); opacity: .8; } 50% { transform: scale(1.35); opacity: 1; } }
+
+    @media (max-width: 900px) {
+      .contribution-grid, .method-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .speed-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .video-grid.four, .video-grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .asset-list { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      .nav-links { display: none; }
+      .hero { padding: 66px 17px 58px; }
+      .shell { padding: 0 12px 66px; }
+      .section, .demo-section { padding-top: 62px; }
+      .abstract-card { padding: 20px 18px; }
+      .stats-grid, .video-grid.four, .video-grid.three, .video-grid.two { grid-template-columns: 1fr; }
+      .speed-grid { grid-template-columns: 1fr; }
+      .panel-top { align-items: flex-start; flex-direction: column; }
+      .prompt-row { grid-template-columns: 1fr; gap: 2px; }
+      .prompt-diff { grid-template-columns: 1fr; gap: 6px; }
+      .prompt-diff-arrow { transform: rotate(90deg); min-height: 20px; }
+      .transport { flex-wrap: wrap; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #motionspeech-site * { scroll-behavior: auto !important; transition: none !important; }
+    }
+
+    /* Mobius-inspired visual layer: a quiet dark canvas, luminous accents, and
+       restrained glass surfaces keep the research content in focus. */
+    body { background: #07090c; color: #f2f5fa; }
+    #motionspeech-site {
+      --ink: #f2f5fa;
+      --muted: #9ca8b9;
+      --line: rgba(232, 240, 255, .13);
+      --paper: rgba(16, 21, 29, .86);
+      --wash: #0d1219;
+      --brand: #91b6ff;
+      --brand-dark: #d1deff;
+      --brand-soft: rgba(105, 146, 255, .15);
+      --motion: #6fe1bd;
+      --motion-soft: rgba(68, 185, 145, .14);
+      --voice: #c19aff;
+      --voice-soft: rgba(169, 122, 255, .15);
+      --audio: #f2b56e;
+      --audio-soft: rgba(242, 181, 110, .14);
+      --coral: #ff9a92;
+      --deep: #070a10;
+      --deep-2: #111a2b;
+      --cyan: #6be7ff;
+      --violet: #b794ff;
+      --shadow: 0 22px 70px rgba(0, 0, 0, .28);
+      position: relative;
+      overflow: clip;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(81, 155, 255, .13), transparent 25rem),
+        radial-gradient(circle at 96% 17%, rgba(173, 112, 255, .12), transparent 30rem),
+        linear-gradient(180deg, #080b10 0%, #0a0e15 43%, #0b1119 100%);
+      color: var(--ink);
+    }
+    #motionspeech-site::before {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      pointer-events: none;
+      opacity: .2;
+      background-image: linear-gradient(rgba(255,255,255,.026) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.026) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.5) 33%, transparent 78%);
+    }
+    #motionspeech-site > * { position: relative; z-index: 1; }
+    #motionspeech-site h1,
+    #motionspeech-site h2,
+    #motionspeech-site h3,
+    #motionspeech-site p,
+    #motionspeech-site figure { text-wrap: pretty; }
+
+    .site-nav {
+      min-height: 64px;
+      padding: 13px max(22px, calc((100vw - 1180px) / 2));
+      background: rgba(7, 10, 14, .72);
+      border-bottom: 1px solid rgba(222, 236, 255, .12);
+      box-shadow: 0 14px 42px rgba(0, 0, 0, .18);
+      backdrop-filter: blur(22px) saturate(135%);
+    }
+    .site-nav::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(107, 231, 255, .42), rgba(183, 148, 255, .34), transparent);
+      opacity: .7;
+    }
+    .wordmark { color: #f4f7fb; font-size: 16px; letter-spacing: -.04em; }
+    .wordmark i { color: var(--cyan); }
+    .nav-links { gap: 25px; }
+    .nav-links a { color: #aab4c4; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; transition: color .2s ease; }
+    .nav-links a:hover { color: #fff; }
+
+    .hero {
+      min-height: 620px;
+      display: grid;
+      place-items: center;
+      padding: 120px 24px 116px;
+      border-bottom: 1px solid rgba(232, 240, 255, .11);
+      background:
+        radial-gradient(circle at 50% 35%, rgba(72, 132, 255, .18), transparent 23rem),
+        radial-gradient(circle at 17% 77%, rgba(83, 215, 185, .11), transparent 20rem),
+        radial-gradient(circle at 86% 74%, rgba(182, 129, 255, .12), transparent 22rem),
+        linear-gradient(145deg, #0b1018, #080b11 64%, #0c1019);
+    }
+    .hero::before {
+      width: 610px;
+      height: 610px;
+      left: -328px;
+      top: -380px;
+      border: 1px solid rgba(108, 231, 255, .18);
+      box-shadow: 0 0 0 23px rgba(108, 231, 255, .03), 0 0 100px rgba(108, 231, 255, .08);
+    }
+    .hero::after {
+      width: 690px;
+      height: 690px;
+      right: -410px;
+      bottom: -468px;
+      border: 1px solid rgba(183, 148, 255, .18);
+      box-shadow: 0 0 0 29px rgba(183, 148, 255, .026), 0 0 100px rgba(183, 148, 255, .09);
+    }
+    .hero-inner::before {
+      width: min(74vw, 780px);
+      height: 320px;
+      border-color: rgba(108, 231, 255, .21);
+      box-shadow: 0 0 0 24px rgba(108, 231, 255, .03), 0 0 120px rgba(108, 231, 255, .13);
+    }
+    .hero-inner::after {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      inset: 8% 7% 3%;
+      border-radius: 40%;
+      background: radial-gradient(ellipse at center, rgba(92, 140, 255, .12), transparent 58%);
+      filter: blur(20px);
+      pointer-events: none;
+    }
+    .eyebrow {
+      margin-bottom: 25px;
+      padding: 8px 12px;
+      border-color: rgba(108, 231, 255, .28);
+      background: rgba(14, 24, 35, .65);
+      color: #a8e9f5;
+      font-size: 10px;
+      letter-spacing: .16em;
+      box-shadow: 0 0 0 5px rgba(108, 231, 255, .025);
+    }
+    .eyebrow::before { background: var(--cyan); box-shadow: 0 0 0 4px rgba(108, 231, 255, .12), 0 0 16px rgba(108, 231, 255, .6); }
+    h1 {
+      max-width: 1000px;
+      color: #f4f7fb;
+      font-family: "Iowan Old Style", "Baskerville", "Times New Roman", serif;
+      font-size: clamp(42px, 5.8vw, 78px);
+      font-weight: 500;
+      line-height: .99;
+      letter-spacing: -.055em;
+    }
+    h1 .gradient { background: linear-gradient(110deg, #a8c5ff 8%, #66e5ff 47%, #c4a1ff 92%); -webkit-background-clip: text; background-clip: text; }
+    .lead { max-width: 760px; margin-top: 28px; color: #a4afc0; font-size: 17px; line-height: 1.78; }
+    .hero-pills { gap: 11px; margin-top: 35px; }
+    .pill {
+      padding: 10px 15px;
+      border-color: rgba(225, 235, 255, .14);
+      background: rgba(17, 24, 34, .72);
+      color: #d8dfeb;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .2), inset 0 1px rgba(255,255,255,.05);
+    }
+    .pill:hover { border-color: rgba(179, 202, 255, .4); box-shadow: 0 16px 34px rgba(0, 0, 0, .28), 0 0 0 4px rgba(144, 180, 255, .05); }
+    .pill.motion { border-color: rgba(111, 225, 189, .32); background: rgba(20, 54, 48, .58); color: #a8efd8; }
+    .pill.voice { border-color: rgba(193, 154, 255, .34); background: rgba(48, 31, 76, .56); color: #decaff; }
+    .pill .coming-soon { color: #8f9caf; }
+
+    .shell { max-width: 1180px; padding: 0 24px 120px; }
+    .section { padding-top: 112px; scroll-margin-top: 78px; }
+    .section-heading { max-width: 920px; margin-bottom: 32px; }
+    .kicker { margin-bottom: 12px; color: var(--cyan); font-size: 10px; letter-spacing: .17em; }
+    .section-heading h2 { color: #f0f4fa; font-family: "Iowan Old Style", "Baskerville", "Times New Roman", serif; font-size: clamp(31px, 4vw, 50px); font-weight: 500; line-height: 1.07; letter-spacing: -.045em; }
+    .section-heading p { color: #96a3b5; }
+
+    .abstract-card,
+    .figure-card,
+    .result-card,
+    .demo-panel,
+    .asset-card {
+      border-color: rgba(227, 237, 255, .13);
+      border-radius: 24px;
+      background: linear-gradient(145deg, rgba(18, 24, 33, .9), rgba(11, 15, 22, .86));
+      box-shadow: var(--shadow), inset 0 1px rgba(255,255,255,.035);
+    }
+    .abstract-card:hover, .result-card:hover, .asset-card:hover { border-color: rgba(161, 194, 255, .32); box-shadow: 0 28px 78px rgba(0, 0, 0, .34), inset 0 1px rgba(255,255,255,.05); }
+    .abstract-card { padding: 30px 31px; }
+    .abstract-card h3, .result-card h3, .asset-card h3 { color: #f2f5fa; }
+    .abstract-card p { color: #a4b0c0; }
+    .figure-card { padding: 13px 13px 17px; }
+    .figure-card img { border: 1px solid rgba(226, 236, 255, .08); border-radius: 16px; background: #10151e; }
+    .figure-card figcaption { color: #8997aa; }
+    .figure-card figcaption strong { color: #ccd6e4; }
+    .contributions-lead { color: #b9c5d4; }
+    .contribution-card,
+    .method-card,
+    .stat,
+    .speed-card {
+      border-color: rgba(227, 237, 255, .12);
+      background: linear-gradient(145deg, rgba(18, 24, 33, .88), rgba(13, 18, 26, .83));
+      box-shadow: 0 17px 46px rgba(0, 0, 0, .2), inset 0 1px rgba(255,255,255,.025);
+    }
+    .contribution-card:hover { border-color: rgba(144, 180, 255, .42); box-shadow: 0 25px 55px rgba(0, 0, 0, .3), inset 0 1px rgba(255,255,255,.05); }
+    .contribution-card::before { color: rgba(127, 166, 255, .11); }
+    .contribution-card h3, .method-card h3 { color: #edf2f8; }
+    .contribution-card p, .method-card p { color: #98a6b8; }
+    .method-card .index { background: rgba(117, 154, 255, .15); color: #bcd0ff; }
+    .method-card:nth-child(2) .index { background: rgba(111, 225, 189, .15); color: #9be8d1; }
+    .method-card:nth-child(3) .index { background: rgba(193, 154, 255, .15); color: #dbbdff; }
+    .stat { background: linear-gradient(145deg, rgba(20, 28, 39, .92), rgba(13, 18, 27, .84)); }
+    .stat::after { border-color: rgba(108, 231, 255, .23); }
+    .stat strong { color: #b8ceff; }
+    .stat span, .result-card > p, .table-note { color: #8997aa !important; }
+    .result-card h3 { font-size: 20px; }
+    .table-scroll { border-color: rgba(227, 237, 255, .12); }
+    th, td { border-bottom-color: rgba(227, 237, 255, .1); color: #b8c3d2; }
+    thead th { background: rgba(77, 101, 139, .2); color: #c4d1e1; }
+    tbody tr.ours td { background: rgba(91, 133, 245, .14); color: #d6e1ff; }
+    td.best { color: #b9cfff; }
+    .table-tag { color: #a9c2ff; }
+    .speed-card strong { color: #c8d5ea; }
+    .speed-values { color: #8796aa; }
+    .speed-values b { color: #b9ccff; }
+
+    .demo-section { padding-top: 118px; scroll-margin-top: 78px; }
+    .demo-heading { grid-template-columns: 62px 1fr; gap: 18px; margin-bottom: 25px; }
+    .demo-number { width: 58px; height: 58px; border: 1px solid rgba(118, 159, 255, .28); border-radius: 18px; background: linear-gradient(145deg, rgba(102, 147, 255, .22), rgba(76, 102, 177, .1)); color: #c6d7ff; box-shadow: 0 0 0 5px rgba(102, 147, 255, .04); }
+    .demo-heading h2 { color: #f2f5fa; font-family: "Iowan Old Style", "Baskerville", "Times New Roman", serif; font-size: clamp(29px, 3.7vw, 45px); font-weight: 500; letter-spacing: -.045em; }
+    .demo-panel { overflow: hidden; }
+    .panel-top { padding: 16px 18px; border-bottom-color: rgba(227, 237, 255, .1); background: rgba(10, 15, 22, .72); }
+    .sample-tab, .control { border-color: rgba(223, 235, 255, .16); background: rgba(23, 31, 42, .8); color: #aebbd0; }
+    .sample-tab:hover, .control:hover { border-color: rgba(151, 184, 255, .5); box-shadow: 0 8px 22px rgba(0, 0, 0, .25); }
+    .sample-tab.active { border-color: rgba(142, 181, 255, .55); background: rgba(93, 134, 236, .2); color: #d1ddff; }
+    .control.primary { border-color: #6c9bff; background: linear-gradient(135deg, #628eff, #7b76ec); color: #fff; box-shadow: 0 8px 22px rgba(86, 123, 243, .24); }
+    .prompt-card { margin: 15px 18px 0; padding: 13px 15px; border-color: rgba(222, 236, 255, .13); background: linear-gradient(145deg, rgba(26, 36, 49, .88), rgba(14, 20, 29, .86)); box-shadow: inset 0 1px rgba(255,255,255,.04); }
+    .prompt-row { color: #aab7c8; }
+    .prompt-row + .prompt-row { border-top-color: rgba(222, 236, 255, .11); }
+    .prompt-label { border-color: rgba(137, 172, 244, .3); background: rgba(90, 128, 216, .18); color: #b7ccff; }
+    .prompt-row[data-field="condition"] .prompt-label,
+    .prompt-row[data-field="motion"] .prompt-label,
+    .prompt-row[data-field="l1"] .prompt-label,
+    .prompt-row[data-field="l2"] .prompt-label { border-color: rgba(111, 225, 189, .3); background: rgba(71, 170, 135, .15); color: #a4ecd7; }
+    .prompt-row[data-field="voice"] .prompt-label { border-color: rgba(193, 154, 255, .38); background: rgba(159, 109, 234, .17); color: #dfc9ff; }
+    .prompt-value, .prompt-step, .prompt-diff-content, .prompt-diff-step { color: #c1ccda; }
+    .prompt-step, .prompt-version { border-color: rgba(216, 231, 255, .13); background: rgba(23, 31, 42, .78); box-shadow: 0 6px 16px rgba(0, 0, 0, .12); }
+    .prompt-step::before { background: rgba(112, 151, 246, .2); color: #bfd0ff; }
+    .prompt-row[data-field="condition"] .prompt-step::before,
+    .prompt-row[data-field="motion"] .prompt-step::before,
+    .prompt-row[data-field="l1"] .prompt-step::before,
+    .prompt-row[data-field="l2"] .prompt-step::before { background: rgba(111, 225, 189, .18); color: #a4ecd7; }
+    .prompt-row.is-modified { border-color: rgba(111, 225, 189, .38); background: linear-gradient(135deg, rgba(42, 105, 87, .22), rgba(22, 56, 50, .22)); }
+    .prompt-row.is-modified .prompt-label { border-color: rgba(111, 225, 189, .42); background: rgba(81, 181, 146, .18); color: #a9f2dc; }
+    .prompt-modified { color: #07090c; }
+    .prompt-version.original { border-color: rgba(255, 154, 125, .3); background: rgba(86, 42, 38, .2); }
+    .prompt-version.updated { border-color: rgba(111, 225, 189, .3); background: rgba(33, 85, 70, .2); }
+    .prompt-version-label { color: #9aa8ba; }
+    .prompt-version.original .prompt-version-label { color: #ffb6a5; }
+    .prompt-version.updated .prompt-version-label { color: #a6ebd7; }
+    .prompt-force-highlight { background: rgba(111, 225, 189, .2); color: #baf5e1; }
+    .prompt-token.removed { background: rgba(200, 87, 72, .25); color: #ffb7ab; }
+    .prompt-token.added { background: rgba(111, 225, 189, .2); color: #b9f2df; }
+    .prompt-diff-arrow { color: #9ab0d1; }
+    #audcap-control .prompt-row.is-modified[data-field="voice"] { border-color: rgba(193, 154, 255, .52); background: linear-gradient(135deg, rgba(100, 63, 151, .27), rgba(60, 39, 92, .25)); }
+    #audcap-control .prompt-row.is-modified[data-field="voice"] .prompt-label { border-color: rgba(193, 154, 255, .54); background: rgba(174, 121, 245, .22); color: #eddcff; }
+    #audcap-control .prompt-row[data-field="voice"] .prompt-version.original { border-color: rgba(193, 154, 255, .35); background: rgba(77, 48, 108, .18); }
+    #audcap-control .prompt-row[data-field="voice"] .prompt-version.updated { border-color: rgba(193, 154, 255, .5); background: rgba(101, 63, 143, .25); }
+    #audcap-control .prompt-row[data-field="voice"] .prompt-version.original .prompt-version-label,
+    #audcap-control .prompt-row[data-field="voice"] .prompt-version.updated .prompt-version-label { color: #e0c8ff; }
+    #audcap-control .prompt-row[data-field="voice"] .prompt-force-highlight,
+    #audcap-control .prompt-row[data-field="voice"] .prompt-token.added { background: rgba(193, 154, 255, .24); color: #efdfff; }
+    #audcap-control .prompt-row[data-field="voice"] .prompt-diff-arrow { color: #c8a8ff; }
+    .media-card { border-color: rgba(227, 237, 255, .13); border-radius: 17px; background: #121923; }
+    .media-card:hover { border-color: rgba(145, 182, 255, .42); box-shadow: 0 22px 42px rgba(0,0,0,.3); }
+    .media-card.ours { border-color: rgba(145, 182, 255, .53); box-shadow: inset 0 3px 0 #759dff, 0 15px 40px rgba(0, 0, 0, .18); }
+    .media-title { border-bottom-color: rgba(227, 237, 255, .1); background: rgba(24, 32, 44, .88); color: #d8e1ee; }
+    .media-title small { color: #8796a9; }
+    .video-shell { background: linear-gradient(145deg, #1a2330, #111923); }
+    .video-shell::after { border-color: rgba(108, 231, 255, .12); background: linear-gradient(115deg, transparent 25%, rgba(108, 231, 255, .04), transparent 70%); }
+    .video-shell video { background: #080d13; }
+    .video-placeholder { background: linear-gradient(145deg, rgba(27, 36, 48, .97), rgba(15, 21, 29, .97)), repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(108, 231, 255, .025) 10px, rgba(108, 231, 255, .025) 20px); color: #8695a9; }
+    .placeholder-icon { background: rgba(107, 151, 255, .17); color: #b8ceff; }
+    .placeholder-inner strong { color: #cad5e3; }
+    .placeholder-inner code { color: #8493a7; }
+    .asset-item { border-color: rgba(227, 237, 255, .12); background: rgba(20, 28, 39, .72); }
+    .asset-item span { color: #c4cfdd; }
+    .asset-item code { color: #8d9aae; }
+    .asset-tip { background: rgba(65, 155, 122, .15); color: #a9e6d1 !important; }
+    .status-line { color: #8997a9; }
+    .status-badge.pending { border-color: rgba(242, 181, 110, .36); background: rgba(130, 82, 30, .2); color: #f2c787; }
+    .status-badge.pending::before { background: #f2b56e; box-shadow: 0 0 0 4px rgba(242, 181, 110, .12); }
+
+    @media (max-width: 720px) {
+      .hero { min-height: 560px; padding: 94px 17px 84px; }
+      h1 { font-size: clamp(39px, 12vw, 60px); }
+      .lead { font-size: 15px; }
+      .shell { padding-bottom: 80px; }
+      .section, .demo-section { padding-top: 82px; }
+      .abstract-card { padding: 22px 19px; }
+      .demo-heading { grid-template-columns: 49px 1fr; gap: 13px; }
+      .demo-number { width: 47px; height: 47px; border-radius: 15px; font-size: 15px; }
+      .prompt-card { margin-left: 12px; margin-right: 12px; }
+      .video-grid { padding-left: 12px; padding-right: 12px; }
+    }
+  </style>
+</head>
+<body>
+<main id="motionspeech-site">
+  <nav class="site-nav" aria-label="Main navigation">
+    <a class="wordmark" href="#top">DuoFlow</a>
+    <div class="nav-links">
+      <a href="#overview">Overview</a>
+      <a href="#dataset">MotionSpeech</a>
+      <a href="#method">Method</a>
+      <a href="#results">Results</a>
+      <a href="#demos">Demos</a>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="hero-inner">
+      <h1><span class="gradient">DuoFlow</span>: Towards Synchronized Speech and Motion Generation with Fine-Grained Control</h1>
+      <p class="lead">A dual-stream latent-flow transformer that jointly generates speech and full-body motion from a transcript, hierarchical motion conditions, and a natural-language voice description.</p>
+      <div class="hero-pills">
+        <button class="pill motion" type="button" aria-label="Hugging Face dataset coming soon"><span aria-hidden="true">🤗</span><span>Hugging Face Dataset</span><span class="coming-soon">coming soon</span></button>
+        <button class="pill voice" type="button" aria-label="GitHub code coming soon"><svg class="github-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .7a11.3 11.3 0 0 0-3.57 22.02c.56.1.77-.24.77-.54v-2.1c-3.14.68-3.8-1.33-3.8-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.73 1.16 1.73 1.16 1 .99 2.6.7 3.23.53.1-.72.39-1.21.71-1.49-2.49-.28-5.11-1.25-5.11-5.56 0-1.23.44-2.23 1.16-3.02-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.1 1.15a10.8 10.8 0 0 1 5.64 0c2.15-1.46 3.1-1.15 3.1-1.15.61 1.55.23 2.7.11 2.98.72.79 1.16 1.79 1.16 3.02 0 4.32-2.63 5.28-5.13 5.56.4.35.76 1.04.76 2.1v3.11c0 .3.2.65.78.54A11.3 11.3 0 0 0 12 .7Z"></path></svg><span>GitHub Code</span><span class="coming-soon">coming soon</span></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <section class="section" id="overview">
+      <div class="section-heading">
+        <span class="kicker">About the paper</span>
+        <h2>Controlling how an utterance sounds and how the body moves</h2>
+      </div>
+      <article class="abstract-card">
+        <h3>Abstract</h3>
+        <p>An embodied speaker's expressiveness depends not only on what is said, but also on how the voice sounds and how the body moves. However, existing joint speech--motion generation models are largely driven implicitly by transcript semantics or intermediate speech representations, offering little explicit control over motion hierarchy, body parts, or vocal style. To bridge this gap, we construct MotionSpeech, a structured benchmark for controllable joint speech--motion generation that includes transcripts, voice-style descriptions, and motion conditions at two hierarchical levels. Building on this benchmark, we propose DuoFlow, a dual-stream latent flow transformer that jointly denoises speech and motion under a shared noise level and a unified second-based temporal coordinate. Modality-specific residual connectors inject structured conditions into the corresponding streams, layer-wise bidirectional cross-modal attention coordinates their generation, and a monotonic phoneme pathway combines normalized progress anchors with CTC supervision to strengthen speech temporal modeling. DuoFlow provides a unified interface for fine-grained motion and vocal-style control and demonstrates the ability to synthesize high-quality, synchronized, and instruction-consistent speech--motion sequences.</p>
+        <figure class="figure-card">
+          <img src="assets/figures/new_teaser.png" width="4398" height="2246" loading="eager" alt="DuoFlow teaser showing transcript, hierarchical motion controls, voice description, and joint speech-motion outputs">
+          <figcaption><strong>DuoFlow overview.</strong> DuoFlow enables controllable joint generation from text conditions to speech and motion. Modifying any modality description can guide the generation: speech content (Transcript), overall motion intent (L1), fine-grained temporal motion (L2), and vocal expression (AUDCAP).</figcaption>
+        </figure>
+      </article>
+      <p class="contributions-lead">Our contributions are threefold.</p>
+      <div class="contribution-grid">
+        <article class="contribution-card" data-number="01"><h3>Structured benchmark</h3><p>We present MotionSpeech, a four-channel structured benchmark for fine-grained controllable joint generation, comprising 34,950 clips.</p></article>
+        <article class="contribution-card" data-number="02"><h3>Unified controllable generation</h3><p>We propose DuoFlow, the first joint speech–motion generation framework to support hierarchical motion and voice-condition control.</p></article>
+        <article class="contribution-card" data-number="03"><h3>Unified evaluation</h3><p>We establish a unified evaluation protocol for generation quality, cross-modal synchronization, and text–motion consistency.</p></article>
+      </div>
+    </section>
+
+    <section class="section" id="dataset">
+      <div class="section-heading">
+        <span class="kicker">MotionSpeech benchmark</span>
+        <h2>Hierarchical conditions for one paired speech-motion target</h2>
+      </div>
+      <figure class="figure-card dataset-figure">
+        <img src="assets/figures/new_data.png" width="1804" height="1545" loading="lazy" alt="MotionSpeech construction from paired SMPL-X motion and speech with L1, L2, transcript, and AUDCAP annotations">
+        <figcaption><strong>MotionSpeech construction.</strong> Motion captioning produces coarse and fine-grained descriptions; audio captioning supplies the voice description, followed by manual verification.</figcaption>
+      </figure>
+      <div class="stats-grid" aria-label="MotionSpeech statistics">
+        <div class="stat"><strong>34,950</strong><span>release segments</span></div>
+        <div class="stat"><strong>125.2 h</strong><span>approximate release duration</span></div>
+        <div class="stat"><strong>17,907</strong><span>BEAT2 segments</span></div>
+        <div class="stat"><strong>17,043</strong><span>Seamless Interaction segments</span></div>
+        <div class="stat"><strong>4</strong><span>structured annotation channels</span></div>
+      </div>
+    </section>
+
+    <section class="section" id="method">
+      <div class="section-heading">
+        <span class="kicker">Method</span>
+        <h2>Two native-rate streams, one coordinated generation process</h2>
+        <p>Speech and motion preserve their native latent rates while exchanging information through gated cross-attention at every flow-transformer block.</p>
+      </div>
+      <figure class="figure-card">
+        <img src="assets/figures/new_method.png" width="4365" height="1648" loading="lazy" alt="DuoFlow architecture with structured conditions, audio and motion latent streams, phoneme conditioning, CTC supervision, and frozen decoders">
+        <figcaption><strong>DuoFlow architecture.</strong> Structured semantic conditions are adapted for both streams. The audio branch additionally receives frozen phoneme features augmented with a learned normalized progress anchor; CTC supervision is used only during training.</figcaption>
+      </figure>
+      <div class="method-grid">
+        <article class="method-card"><span class="index">01</span><h3>Modality-adapted conditions</h3><p>Frozen Gemma features are fused and passed through separate residual connectors so the same structured prompt can be interpreted differently by speech and motion.</p></article>
+        <article class="method-card"><span class="index">02</span><h3>Bidirectional stream coupling</h3><p>Eight dual-stream blocks combine self-attention, condition cross-attention, and gated audio-to-motion and motion-to-audio exchange on a shared temporal coordinate.</p></article>
+        <article class="method-card"><span class="index">03</span><h3>Phoneme-progress alignment</h3><p>A normalized progress anchor injects relative phoneme order into every audio block, while multi-depth CTC supervision regularizes intermediate audio states during training.</p></article>
+      </div>
+    </section>
+
+    <section class="section" id="results">
+      <div class="section-heading">
+        <span class="kicker">Experiments</span>
+        <h2>Current automatic benchmark results</h2>
+      </div>
+      <article class="result-card">
+        <h3>Automatic speech-motion generation quality and alignment</h3>
+        <p>DuoFlow leads on speech intelligibility, speaker similarity, motion fidelity, foot-contact stability, and both levels of PairAcc. Match-TTSG has the smallest BC Gap, showing that rhythmic alignment and motion fidelity measure different properties.</p>
+        <div class="table-scroll">
+          <table aria-label="Automatic DuoFlow benchmark results">
+            <thead><tr><th>System</th><th>WER (%) ↓</th><th>SpkSim ↑</th><th>FGD ↓</th><th>Skate (%) ↓</th><th>BC Gap ↓</th><th>L1 PairAcc ↑</th><th>L2 PairAcc ↑</th></tr></thead>
+            <tbody>
+              <tr><td>CosyVoice2 + MambaTalk</td><td><b>6.12</b></td><td>0.80</td><td>2.61</td><td>46.78</td><td>0.23</td><td>53.42</td><td>53.63</td></tr>
+              <tr><td>Match-TTSG</td><td>36.35</td><td>0.75</td><td>5.14</td><td>84.01</td><td><b>0.06</b></td><td>56.38</td><td>60.38</td></tr>
+              <tr><td>Motion-Omni</td><td>74.98</td><td>0.56</td><td>1.32</td><td>66.57</td><td>0.34</td><td>61.37</td><td>62.68</td></tr>
+              <tr class="ours"><td>DuoFlow <span class="table-tag">(Ours)</span></td><td><b>4.71</b></td><td><b>0.94</b></td><td><b>0.75</b></td><td><b>29.61</b></td><td>0.14</td><td><b>87.43</b></td><td><b>90.40</b></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="speed-grid" aria-label="Inference speed summary">
+          <div class="speed-card"><strong>Match-TTSG</strong><div class="speed-values"><span><b>0.35</b> s mean</span><span><b>0.03</b> RTF</span><span>1.00×</span></div></div>
+          <div class="speed-card"><strong>CosyVoice2 + MambaTalk</strong><div class="speed-values"><span><b>2.82</b> s mean</span><span><b>0.22</b> RTF</span><span>8.07×</span></div></div>
+          <div class="speed-card"><strong>Motion-Omni</strong><div class="speed-values"><span><b>5.03</b> s mean</span><span><b>0.39</b> RTF</span><span>14.39×</span></div></div>
+          <div class="speed-card"><strong>DuoFlow</strong><div class="speed-values"><span><b>1.33</b> s mean</span><span><b>0.10</b> RTF</span><span>3.80×</span></div></div>
+        </div>
+      </article>
+    </section>
+
+    <div id="demos"></div>
+
+    <section class="demo-section" id="comparison-control" data-demo-section="comparison">
+      <div class="demo-heading"><span class="demo-number">01</span><div><h2>Joint-generation comparison</h2></div></div>
+      <div class="demo-panel" data-demo-group="comparison">
+        <div class="panel-top"><div class="sample-tabs" role="tablist" aria-label="Joint-generation comparison samples"></div><div><button class="control primary" data-action="play" type="button">▶ Play aligned</button> <button class="control" data-action="reset" type="button">↺ Reset</button></div></div>
+        <div class="prompt-card">          <div class="prompt-row" data-field="transcript"><span class="prompt-label">Transcript</span><span class="prompt-value" data-field="transcript"></span></div>
+          <div class="prompt-row" data-field="condition"><span class="prompt-label">Motion condition</span><span class="prompt-value" data-field="condition"></span></div>
+          <div class="prompt-row" data-field="voice"><span class="prompt-label">Voice condition</span><span class="prompt-value" data-field="voice"></span></div></div>
+        <div class="video-grid four">          <article class="media-card ours" data-slot="duoflow">
+            <div class="media-title"><span>DuoFlow</span><small>Ours</small></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="DuoFlow comparison output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+          <article class="media-card" data-slot="cosy">
+            <div class="media-title"><span>CosyVoice2 + MambaTalk</span></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="CosyVoice2 + MambaTalk comparison output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+          <article class="media-card" data-slot="match">
+            <div class="media-title"><span>Match-TTSG</span></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="Match-TTSG comparison output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+          <article class="media-card" data-slot="motionomni">
+            <div class="media-title"><span>Motion-Omni</span></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="Motion-Omni comparison output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="demo-section" id="l1-control" data-demo-section="l1">
+      <div class="demo-heading"><span class="demo-number">02</span><div><h2>L1 motion control</h2></div></div>
+      <div class="demo-panel" data-demo-group="l1">
+        <div class="panel-top"><div class="sample-tabs" role="tablist" aria-label="L1 motion control samples"></div><div><button class="control primary" data-action="play" type="button">▶ Play aligned</button> <button class="control" data-action="reset" type="button">↺ Reset</button></div></div>
+        <div class="prompt-card">          <div class="prompt-row" data-field="transcript"><span class="prompt-label">Transcript</span><span class="prompt-value" data-field="transcript"></span></div>
+          <div class="prompt-row" data-field="voice"><span class="prompt-label">AUDCAP</span><span class="prompt-value" data-field="voice"></span></div>
+          <div class="prompt-row is-modified" data-field="l1"><span class="prompt-label"><span>L1 condition</span><b class="prompt-modified">Modified prompt</b></span><span class="prompt-value" data-field="l1"></span></div></div>
+        <div class="video-grid four">          <article class="media-card ours" data-slot="duoflow">
+            <div class="media-title"><span>DuoFlow</span><small>Ours</small></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="DuoFlow l1 output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+          <article class="media-card" data-slot="cosy">
+            <div class="media-title"><span>CosyVoice2 + MambaTalk</span></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="CosyVoice2 + MambaTalk l1 output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+          <article class="media-card" data-slot="match">
+            <div class="media-title"><span>Match-TTSG</span></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="Match-TTSG l1 output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+          <article class="media-card" data-slot="motionomni">
+            <div class="media-title"><span>Motion-Omni</span></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="Motion-Omni l1 output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="demo-section" id="l2-control" data-demo-section="l2">
+      <div class="demo-heading"><span class="demo-number">03</span><div><h2>L2 motion control</h2></div></div>
+      <div class="demo-panel" data-demo-group="l2">
+        <div class="panel-top"><div class="sample-tabs" role="tablist" aria-label="L2 motion control samples"></div><div><button class="control primary" data-action="play" type="button">▶ Play aligned</button> <button class="control" data-action="reset" type="button">↺ Reset</button></div></div>
+        <div class="prompt-card">          <div class="prompt-row" data-field="transcript"><span class="prompt-label">Transcript</span><span class="prompt-value" data-field="transcript"></span></div>
+          <div class="prompt-row" data-field="voice"><span class="prompt-label">AUDCAP</span><span class="prompt-value" data-field="voice"></span></div>
+          <div class="prompt-row is-modified" data-field="l2"><span class="prompt-label"><span>L2 condition</span><b class="prompt-modified">Modified prompt</b></span><span class="prompt-value" data-field="l2"></span></div></div>
+        <div class="video-grid four">          <article class="media-card ours" data-slot="duoflow">
+            <div class="media-title"><span>DuoFlow</span><small>Ours</small></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="DuoFlow l2 output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+          <article class="media-card" data-slot="cosy">
+            <div class="media-title"><span>CosyVoice2 + MambaTalk</span></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="CosyVoice2 + MambaTalk l2 output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+          <article class="media-card" data-slot="match">
+            <div class="media-title"><span>Match-TTSG</span></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="Match-TTSG l2 output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+          <article class="media-card" data-slot="motionomni">
+            <div class="media-title"><span>Motion-Omni</span></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="Motion-Omni l2 output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="demo-section" id="audcap-control" data-demo-section="audcap">
+      <div class="demo-heading"><span class="demo-number">04</span><div><h2>AUDCAP voice control</h2></div></div>
+      <div class="demo-panel" data-demo-group="audcap">
+        <div class="panel-top"><div class="sample-tabs" role="tablist" aria-label="AUDCAP voice control samples"></div><div><button class="control primary" data-action="play" type="button">▶ Play aligned</button> <button class="control" data-action="reset" type="button">↺ Reset</button></div></div>
+        <div class="prompt-card">          <div class="prompt-row" data-field="transcript"><span class="prompt-label">Transcript</span><span class="prompt-value" data-field="transcript"></span></div>
+          <div class="prompt-row" data-field="motion"><span class="prompt-label">Motion condition</span><span class="prompt-value" data-field="motion"></span></div>
+          <div class="prompt-row is-modified" data-field="voice"><span class="prompt-label"><span>AUDCAP condition</span><b class="prompt-modified">Modified prompt</b></span><span class="prompt-value" data-field="voice"></span></div></div>
+        <div class="video-grid four">          <article class="media-card ours" data-slot="duoflow">
+            <div class="media-title"><span>DuoFlow</span><small>Ours</small></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="DuoFlow audcap output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+          <article class="media-card" data-slot="cosy">
+            <div class="media-title"><span>CosyVoice2 + MambaTalk</span></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="CosyVoice2 + MambaTalk audcap output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+          <article class="media-card" data-slot="match">
+            <div class="media-title"><span>Match-TTSG</span></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="Match-TTSG audcap output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+          <article class="media-card" data-slot="motionomni">
+            <div class="media-title"><span>Motion-Omni</span></div>
+            <div class="video-shell"><video controls playsinline preload="metadata" aria-label="Motion-Omni audcap output"></video><div class="video-placeholder"><div class="placeholder-inner"><span class="placeholder-icon">▶</span><strong>Loading video…</strong><code></code></div></div></div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </div>
+
+</main>
+
+<script>
+  const DEMOS = {
+  "comparison": [
+    {
+      "name": "case1",
+      "sampleId": "sample-01",
+      "videos": {
+        "duoflow": "assets/videos/comparison_s01_duoflow.mp4",
+        "cosy": "assets/videos/comparison_s01_cosy.mp4",
+        "match": "assets/videos/comparison_s01_match.mp4",
+        "motionomni": "assets/videos/comparison_s01_motionomni.mp4"
+      },
+      "l2": "First, both arms hang vertically beside the thighs. Next, the left elbow bends and the left forearm lifts toward the chest while the right arm remains lowered. Then, the right hand crosses toward the left shoulder as the left arm extends outward with the palm facing down. Finally, the left hand moves behind the back, the right arm lowers, and the body turns to the right before taking two steps forward.",
+      "transcript": "Many of my favorite places in the city have already been destroyed. A few of these favorite places in mine",
+      "voice": "Male voice, speaking in a slow, deliberate manner with pauses between phrases.",
+      "l1": "Both arms rise and open from the sides, and the hands begin alternating near the torso; then both arms sweep farther outward, move behind the back, and the body turns to walk away.",
+      "condition": "First, both arms hang beside the thighs. Next, both elbows bend as both forearms lift and open outward toward waist and chest height. Then, while both elbows remain bent, both hands alternate moving in front of the torso. Finally, both elbows extend, and both arms lower beside the thighs.",
+      "motion": "First, both arms hang beside the thighs. Next, both elbows bend as both forearms lift and open outward toward waist and chest height. Then, while both elbows remain bent, both hands alternate moving in front of the torso. Finally, both elbows extend, and both arms lower beside the thighs."
+    },
+    {
+      "name": "case2",
+      "sampleId": "sample-02",
+      "videos": {
+        "duoflow": "assets/videos/comparison_s02_duoflow.mp4",
+        "cosy": "assets/videos/comparison_s02_cosy.mp4",
+        "match": "assets/videos/comparison_s02_match.mp4",
+        "motionomni": "assets/videos/comparison_s02_motionomni.mp4"
+      },
+      "l1": "The left hand opens beside the shoulder and both hands spread outward with palms up; then the right arm lifts overhead, the left hand moves behind the back, and the body turns to the right.",
+      "transcript": "So yeah, that's a benefit of face-to-face communication. But you can't always be in the same place with people, right? Because even for me personally, since coming to Japan, I've never",
+      "voice": "Female voice, conversational tone, clear articulation",
+      "l2": "First, the person stands upright with both elbows bent and the hands touching at the upper abdomen. Next, the right forearm lifts beside the right shoulder as the upper body inclines slightly right, while the left hand remains near the torso. Then, the right palm turns downward and reaches forward as the left arm extends sideways with closed fingers. Finally, the right hand moves behind the right hip, the left hand stays extended in front of the chest, and the body remains tilted to the right.",
+      "condition": "The left hand opens beside the shoulder, both hands spread outward with palms up, and they return together at the upper abdomen.",
+      "motion": "The left hand opens beside the shoulder, both hands spread outward with palms up, and they return together at the upper abdomen."
+    },
+    {
+      "name": "case3",
+      "sampleId": "sample-03",
+      "videos": {
+        "duoflow": "assets/videos/comparison_s03_duoflow.mp4",
+        "cosy": "assets/videos/comparison_s03_cosy.mp4",
+        "match": "assets/videos/comparison_s03_match.mp4",
+        "motionomni": "assets/videos/comparison_s03_motionomni.mp4"
+      },
+      "l1": "Both hands lower from a broad open pose beside the shoulders; then the hands separate, extend forward at shoulder height, move behind the back, and the torso turns to the left.",
+      "transcript": "or a place where people are going insane. Situations like this make me feel uncomfortable, especially when the place is too noisy or if I have been in an environment which is noisy for a long time.",
+      "voice": "Male voice, calm and conversational tone, clear articulation",
+      "l2": "First, the left hand is raised beside the left shoulder with the palm facing forward and the fingers spread, while the right hand rests near the waist. Next, the left forearm lowers across the chest as the right hand lifts toward the right shoulder with curled fingers. Then, the right arm extends outward with the palm facing down while the left hand moves behind the back. Finally, the torso turns to the right, the right hand remains raised beside the head, and the left hand settles behind the left hip.",
+      "condition": "Both hands lower from a broad open pose beside the shoulders and gradually close together over the upper abdomen.",
+      "motion": "Both hands lower from a broad open pose beside the shoulders and gradually close together over the upper abdomen."
+    },
+    {
+      "name": "case4",
+      "sampleId": "sample-04",
+      "videos": {
+        "duoflow": "assets/videos/comparison_s04_duoflow.mp4",
+        "cosy": "assets/videos/comparison_s04_cosy.mp4",
+        "match": "assets/videos/comparison_s04_match.mp4",
+        "motionomni": "assets/videos/comparison_s04_motionomni.mp4"
+      },
+      "l1": "Both hands lower and rise into a broad palm-up opening; then the right arm reaches overhead, the left hand swings behind the back, and the body turns left and steps away.",
+      "transcript": "you watch the Harry Potter things, you see the Quidditch being filmed outside, you see those big arches, you see the towers. Those are the things that you can see. And that's the moment",
+      "voice": "Male voice, calm and narrative tone, clear articulation",
+      "l2": "First, the right hand is held near the lower chest and the left hand near the upper abdomen, then both hands descend toward the waist. Next, the right forearm lifts alone and opens beside the shoulder with the palm facing down while the left hand stays near the waist. Then, the left arm sweeps outward to shoulder height as the right hand retracts behind the back. Finally, the torso turns left, the left hand extends overhead with spread fingers, and the right hand remains behind the right hip.",
+      "condition": "Hands start at the chest, then rise into a broad palm-up opening, regroup, and lift near the shoulders before finishing close to the chest.",
+      "motion": "Hands start at the chest, then rise into a broad palm-up opening, regroup, and lift near the shoulders before finishing close to the chest."
+    },
+    {
+      "name": "case5",
+      "sampleId": "sample-05",
+      "videos": {
+        "duoflow": "assets/videos/comparison_s05_duoflow.mp4",
+        "cosy": "assets/videos/comparison_s05_cosy.mp4",
+        "match": "assets/videos/comparison_s05_match.mp4",
+        "motionomni": "assets/videos/comparison_s05_motionomni.mp4"
+      },
+      "l2": "First, both elbows are bent and the hands make small tapping motions with flat palms near the lower chest. Next, the hands lower briefly toward the waist, then the left hand rises beside the left temple while the right forearm extends outward at shoulder height. Then, the left fingertips touch the left temple as the right palm turns downward and the fingers close together. Finally, the left hand remains near the head, the right hand moves behind the back, and the torso turns to the right with both elbows held away from the body.",
+      "transcript": "And I don't mind it. I like going out. I love going out. So I don't mind it.",
+      "voice": "Female voice, conversational tone, clear articulation",
+      "l1": "Both hands make small pinching motions near the lower chest and lift beside the face; then the left arm extends outward, the right hand moves behind the back, and the body turns and takes several steps forward.",
+      "condition": "First, both elbows are bent and the hands make small pinching and curling motions near the lower chest. Next, the hands lower briefly toward the waist and then lift together to either side of the face with curved fingers. Then, the right fingertips touch the right temple while the left hand remains raised near the left shoulder. Finally, both forearms descend and the hands meet across the upper abdomen, ending loosely clasped with both elbows bent.",
+      "motion": "First, both elbows are bent and the hands make small pinching and curling motions near the lower chest. Next, the hands lower briefly toward the waist and then lift together to either side of the face with curved fingers. Then, the right fingertips touch the right temple while the left hand remains raised near the left shoulder. Finally, both forearms descend and the hands meet across the upper abdomen, ending loosely clasped with both elbows bent."
+    },
+    {
+      "name": "case6",
+      "sampleId": "sample-06",
+      "videos": {
+        "duoflow": "assets/videos/comparison_s06_duoflow.mp4",
+        "cosy": "assets/videos/comparison_s06_cosy.mp4",
+        "match": "assets/videos/comparison_s06_match.mp4",
+        "motionomni": "assets/videos/comparison_s06_motionomni.mp4"
+      },
+      "l2": "First, the left elbow is bent with the left hand near the waist, and the left palm rotates outward as the fingers spread. Next, the left forearm retracts and descends until both arms hang vertically beside the thighs. Then, the right elbow bends and the right hand rises from the hip, opening outward beside the waist with the fingers spread. Finally, the right hand lowers and both arms finish hanging beside the thighs with the upright stance centered.",
+      "transcript": "or how to lie, steal, and take advantage of your situation. I don't think that's the way we should behave. I think that a leader should be someone who represents the entire country without cutting down others based on personal beliefs.",
+      "voice": "Female voice, clear and steady tone, speaking at a moderate pace",
+      "l1": "The right hand opens outward near the waist and lowers; then the left arm lifts overhead, the right hand moves behind the back, and the body turns and steps to the left.",
+      "condition": "First, the right elbow is bent with the right hand near the waist, and the right palm rotates outward as the fingers spread. Next, the right forearm retracts and descends until both arms hang vertically beside the thighs. Then, the left elbow bends and the left hand rises from the hip, opening outward beside the waist with the fingers spread. Finally, the left hand lowers and both arms finish hanging beside the thighs with the upright stance centered.",
+      "motion": "First, the right elbow is bent with the right hand near the waist, and the right palm rotates outward as the fingers spread. Next, the right forearm retracts and descends until both arms hang vertically beside the thighs. Then, the left elbow bends and the left hand rises from the hip, opening outward beside the waist with the fingers spread. Finally, the left hand lowers and both arms finish hanging beside the thighs with the upright stance centered."
+    }
+  ],
+  "l1": [
+    {
+      "name": "case1",
+      "sampleId": "sample-01",
+      "videos": {
+        "duoflow": "assets/videos/l1_s01_duoflow.mp4",
+        "cosy": "assets/videos/l1_s01_cosy.mp4",
+        "match": "assets/videos/l1_s01_match.mp4",
+        "motionomni": "assets/videos/l1_s01_motionomni.mp4"
+      },
+      "l2": "First, both arms hang vertically beside the thighs. Next, the left elbow bends and the left forearm lifts toward the chest while the right arm remains lowered. Then, the right hand crosses toward the left shoulder as the left arm extends outward with the palm facing down. Finally, the left hand moves behind the back, the right arm lowers, and the body turns to the right before taking two steps forward.",
+      "transcript": "Many of my favorite places in the city have already been destroyed. A few of these favorite places in mine",
+      "voice": "Male voice, speaking in a slow, deliberate manner with pauses between phrases.",
+      "l1": "Both arms rise and open from the sides, and the hands begin alternating near the torso; then both arms sweep farther outward, move behind the back, and the body turns to walk away.",
+      "condition": "First, both arms hang vertically beside the thighs. Next, the elbows bend as both forearms lift and open outward toward waist and chest level. Then, the hands make alternating movements in front of the torso while the elbows remain bent. Finally, both elbows extend and the arms lower to hang vertically beside the thighs.",
+      "motion": "First, both arms hang vertically beside the thighs. Next, the elbows bend as both forearms lift and open outward toward waist and chest level. Then, the hands make alternating movements in front of the torso while the elbows remain bent. Finally, both elbows extend and the arms lower to hang vertically beside the thighs."
+    },
+    {
+      "name": "case2",
+      "sampleId": "sample-02",
+      "videos": {
+        "duoflow": "assets/videos/l1_s02_duoflow_r13ctc0testset.mp4",
+        "cosy": "assets/videos/l1_s02_cosy.mp4",
+        "match": "assets/videos/l1_s02_match.mp4",
+        "motionomni": "assets/videos/l1_s02_motionomni.mp4"
+      },
+      "l1": "The left hand rises palm-up near the shoulder, then the right hand lifts near the chest and turns palm-down.",
+      "transcript": "So yeah, that's a benefit of face-to-face communication. But you can't always be in the same place with people, right? Because even for me personally, since coming to Japan, I've never",
+      "voice": "Female voice, conversational tone, clear articulation",
+      "l2": "First, the person stands upright with both elbows bent and the hands touching at the upper abdomen. Next, the right forearm lifts beside the right shoulder as the upper body inclines slightly right, while the left hand remains near the torso. Then, the right palm turns downward and reaches forward as the left arm extends sideways with closed fingers. Finally, the right hand moves behind the right hip, the left hand stays extended in front of the chest, and the body remains tilted to the right.",
+      "condition": "The left hand opens beside the shoulder, both hands spread outward with palms up, and they return together at the upper abdomen.",
+      "motion": "The left hand opens beside the shoulder, both hands spread outward with palms up, and they return together at the upper abdomen."
+    },
+    {
+      "name": "case3",
+      "sampleId": "sample-03",
+      "videos": {
+        "duoflow": "assets/videos/l1_s03_duoflow_r13ctc0testset.mp4",
+        "cosy": "assets/videos/l1_s03_cosy.mp4",
+        "match": "assets/videos/l1_s03_match.mp4",
+        "motionomni": "assets/videos/l1_s03_motionomni.mp4"
+      },
+      "l1": "Asymmetric hand gestures open beside the waist, alternate across the torso, and finish with both hands together near the upper abdomen.",
+      "transcript": "or a place where people are going insane. Situations like this make me feel uncomfortable, especially when the place is too noisy or if I have been in an environment which is noisy for a long time.",
+      "voice": "Male voice, calm and conversational tone, clear articulation",
+      "l2": "First, the left hand is raised beside the left shoulder with the palm facing forward and the fingers spread, while the right hand rests near the waist. Next, the left forearm lowers across the chest as the right hand lifts toward the right shoulder with curled fingers. Then, the right arm extends outward with the palm facing down while the left hand moves behind the back. Finally, the torso turns to the right, the right hand remains raised beside the head, and the left hand settles behind the left hip.",
+      "condition": "Both hands lower from a broad open pose beside the shoulders and gradually close together over the upper abdomen.",
+      "motion": "Both hands lower from a broad open pose beside the shoulders and gradually close together over the upper abdomen."
+    },
+    {
+      "name": "case4",
+      "sampleId": "sample-04",
+      "videos": {
+        "duoflow": "assets/videos/l1_s04_duoflow_r13ctc0testset.mp4",
+        "cosy": "assets/videos/l1_s04_cosy.mp4",
+        "match": "assets/videos/l1_s04_match.mp4",
+        "motionomni": "assets/videos/l1_s04_motionomni.mp4"
+      },
+      "l1": "The right hand repeatedly touches the chest and opens palm-up, finishing near the shoulder with the thumb raised while the left arm hangs.",
+      "transcript": "you watch the Harry Potter things, you see the Quidditch being filmed outside, you see those big arches, you see the towers. Those are the things that you can see. And that's the moment",
+      "voice": "Male voice, calm and narrative tone, clear articulation",
+      "l2": "First, the right hand is held near the lower chest and the left hand near the upper abdomen, then both hands descend toward the waist. Next, the right forearm lifts alone and opens beside the shoulder with the palm facing down while the left hand stays near the waist. Then, the left arm sweeps outward to shoulder height as the right hand retracts behind the back. Finally, the torso turns left, the left hand extends overhead with spread fingers, and the right hand remains behind the right hip.",
+      "condition": "Hands start at the chest, then rise into a broad palm-up opening, regroup, and lift near the shoulders before finishing close to the chest.",
+      "motion": "Hands start at the chest, then rise into a broad palm-up opening, regroup, and lift near the shoulders before finishing close to the chest."
+    },
+    {
+      "name": "case5",
+      "sampleId": "sample-05",
+      "videos": {
+        "duoflow": "assets/videos/l1_s05_duoflow.mp4",
+        "cosy": "assets/videos/l1_s05_cosy.mp4",
+        "match": "assets/videos/l1_s05_match.mp4",
+        "motionomni": "assets/videos/l1_s05_motionomni.mp4"
+      },
+      "l2": "First, both elbows are bent and the hands make small tapping motions with flat palms near the lower chest. Next, the hands lower briefly toward the waist, then the left hand rises beside the left temple while the right forearm extends outward at shoulder height. Then, the left fingertips touch the left temple as the right palm turns downward and the fingers close together. Finally, the left hand remains near the head, the right hand moves behind the back, and the torso turns to the right with both elbows held away from the body.",
+      "transcript": "And I don't mind it. I like going out. I love going out. So I don't mind it.",
+      "voice": "Female voice, conversational tone, clear articulation",
+      "l1": "Both hands make small pinching motions near the lower chest and lift beside the face; then the left arm extends outward, the right hand moves behind the back, and the body turns and takes several steps forward.",
+      "condition": "First, both elbows are bent and the hands make small pinching and curling motions near the lower chest. Next, the hands lower briefly toward the waist and then lift together to either side of the face with curved fingers. Then, the right fingertips touch the right temple while the left hand remains raised near the left shoulder. Finally, both forearms descend and the hands meet across the upper abdomen, ending loosely clasped with both elbows bent.",
+      "motion": "First, both elbows are bent and the hands make small pinching and curling motions near the lower chest. Next, the hands lower briefly toward the waist and then lift together to either side of the face with curved fingers. Then, the right fingertips touch the right temple while the left hand remains raised near the left shoulder. Finally, both forearms descend and the hands meet across the upper abdomen, ending loosely clasped with both elbows bent."
+    },
+    {
+      "name": "case6",
+      "sampleId": "sample-06",
+      "videos": {
+        "duoflow": "assets/videos/l1_s06_duoflow.mp4",
+        "cosy": "assets/videos/l1_s06_cosy.mp4",
+        "match": "assets/videos/l1_s06_match.mp4",
+        "motionomni": "assets/videos/l1_s06_motionomni.mp4"
+      },
+      "l2": "First, the left elbow is bent with the left hand near the waist, and the left palm rotates outward as the fingers spread. Next, the left forearm retracts and descends until both arms hang vertically beside the thighs. Then, the right elbow bends and the right hand rises from the hip, opening outward beside the waist with the fingers spread. Finally, the right hand lowers and both arms finish hanging beside the thighs with the upright stance centered.",
+      "transcript": "or how to lie, steal, and take advantage of your situation. I don't think that's the way we should behave. I think that a leader should be someone who represents the entire country without cutting down others based on personal beliefs.",
+      "voice": "Female voice, clear and steady tone, speaking at a moderate pace",
+      "l1": "The right hand opens outward near the waist and lowers; then the left arm lifts overhead, the right hand moves behind the back, and the body turns and steps to the left.",
+      "condition": "First, the right elbow is bent with the right hand near the waist, and the right palm rotates outward as the fingers spread. Next, the right forearm retracts and descends until both arms hang vertically beside the thighs. Then, the left elbow bends and the left hand rises from the hip, opening outward beside the waist with the fingers spread. Finally, the left hand lowers and both arms finish hanging beside the thighs with the upright stance centered.",
+      "motion": "First, the right elbow is bent with the right hand near the waist, and the right palm rotates outward as the fingers spread. Next, the right forearm retracts and descends until both arms hang vertically beside the thighs. Then, the left elbow bends and the left hand rises from the hip, opening outward beside the waist with the fingers spread. Finally, the left hand lowers and both arms finish hanging beside the thighs with the upright stance centered."
+    }
+  ],
+  "l2": [
+    {
+      "name": "case1",
+      "sampleId": "sample-01",
+      "videos": {
+        "duoflow": "assets/videos/l2_s01_duoflow_r13ctc0testset.mp4",
+        "cosy": "assets/videos/l2_s01_cosy.mp4",
+        "match": "assets/videos/l2_s01_match.mp4",
+        "motionomni": "assets/videos/l2_s01_motionomni.mp4"
+      },
+      "l2": "First, both elbows are bent with the hands near the waist and lower abdomen. Next, the hands alternately open outward from the torso and sweep back inward, with the palms turning up and down. Then, both hands draw together and overlap low at the abdomen. Finally, the right forearm rises diagonally across the torso so the right hand finishes near the upper chest while the left hand stays lower.",
+      "transcript": "Many of my favorite places in the city have already been destroyed. A few of these favorite places in mine",
+      "voice": "Male voice, speaking in a slow, deliberate manner with pauses between phrases.",
+      "l1": "Both arms rise and open from the sides, and the hands begin alternating near the torso; then both arms sweep farther outward, move behind the back, and the body turns to walk away.",
+      "condition": "First, both arms hang vertically beside the thighs. Next, the elbows bend as both forearms lift and open outward toward waist and chest level. Then, the hands make alternating movements in front of the torso while the elbows remain bent. Finally, both elbows extend and the arms lower to hang vertically beside the thighs.",
+      "motion": "First, both arms hang vertically beside the thighs. Next, the elbows bend as both forearms lift and open outward toward waist and chest level. Then, the hands make alternating movements in front of the torso while the elbows remain bent. Finally, both elbows extend and the arms lower to hang vertically beside the thighs."
+    },
+    {
+      "name": "case2",
+      "sampleId": "sample-02",
+      "videos": {
+        "duoflow": "assets/videos/l2_s02_duoflow.mp4",
+        "cosy": "assets/videos/l2_s02_cosy.mp4",
+        "match": "assets/videos/l2_s02_match.mp4",
+        "motionomni": "assets/videos/l2_s02_motionomni.mp4"
+      },
+      "l1": "The left hand opens beside the shoulder and both hands spread outward with palms up; then the right arm lifts overhead, the left hand moves behind the back, and the body turns to the right.",
+      "transcript": "So yeah, that's a benefit of face-to-face communication. But you can't always be in the same place with people, right? Because even for me personally, since coming to Japan, I've never",
+      "voice": "Female voice, conversational tone, clear articulation",
+      "l2": "First, the person stands upright with both elbows bent and the hands touching at the upper abdomen. Next, the right forearm lifts beside the right shoulder as the upper body inclines slightly right, while the left hand remains near the torso. Then, the right palm turns downward and reaches forward as the left arm extends sideways with closed fingers. Finally, the right hand moves behind the right hip, the left hand stays extended in front of the chest, and the body remains tilted to the right.",
+      "condition": "The left hand opens beside the shoulder, both hands spread outward with palms up, and they return together at the upper abdomen.",
+      "motion": "The left hand opens beside the shoulder, both hands spread outward with palms up, and they return together at the upper abdomen."
+    },
+    {
+      "name": "case3",
+      "sampleId": "sample-03",
+      "videos": {
+        "duoflow": "assets/videos/l2_s03_duoflow.mp4",
+        "cosy": "assets/videos/l2_s03_cosy.mp4",
+        "match": "assets/videos/l2_s03_match.mp4",
+        "motionomni": "assets/videos/l2_s03_motionomni.mp4"
+      },
+      "l1": "Both hands lower from a broad open pose beside the shoulders; then the hands separate, extend forward at shoulder height, move behind the back, and the torso turns to the left.",
+      "transcript": "or a place where people are going insane. Situations like this make me feel uncomfortable, especially when the place is too noisy or if I have been in an environment which is noisy for a long time.",
+      "voice": "Male voice, calm and conversational tone, clear articulation",
+      "l2": "First, the left hand is raised beside the left shoulder with the palm facing forward and the fingers spread, while the right hand rests near the waist. Next, the left forearm lowers across the chest as the right hand lifts toward the right shoulder with curled fingers. Then, the right arm extends outward with the palm facing down while the left hand moves behind the back. Finally, the torso turns to the right, the right hand remains raised beside the head, and the left hand settles behind the left hip.",
+      "condition": "Both hands lower from a broad open pose beside the shoulders and gradually close together over the upper abdomen.",
+      "motion": "Both hands lower from a broad open pose beside the shoulders and gradually close together over the upper abdomen."
+    },
+    {
+      "name": "case4",
+      "sampleId": "sample-04",
+      "videos": {
+        "duoflow": "assets/videos/l2_s04_duoflow.mp4",
+        "cosy": "assets/videos/l2_s04_cosy.mp4",
+        "match": "assets/videos/l2_s04_match.mp4",
+        "motionomni": "assets/videos/l2_s04_motionomni.mp4"
+      },
+      "l1": "Both hands lower and rise into a broad palm-up opening; then the right arm reaches overhead, the left hand swings behind the back, and the body turns left and steps away.",
+      "transcript": "you watch the Harry Potter things, you see the Quidditch being filmed outside, you see those big arches, you see the towers. Those are the things that you can see. And that's the moment",
+      "voice": "Male voice, calm and narrative tone, clear articulation",
+      "l2": "First, the right hand is held near the lower chest and the left hand near the upper abdomen, then both hands descend toward the waist. Next, the right forearm lifts alone and opens beside the shoulder with the palm facing down while the left hand stays near the waist. Then, the left arm sweeps outward to shoulder height as the right hand retracts behind the back. Finally, the torso turns left, the left hand extends overhead with spread fingers, and the right hand remains behind the right hip.",
+      "condition": "Hands start at the chest, then rise into a broad palm-up opening, regroup, and lift near the shoulders before finishing close to the chest.",
+      "motion": "Hands start at the chest, then rise into a broad palm-up opening, regroup, and lift near the shoulders before finishing close to the chest."
+    },
+    {
+      "name": "case5",
+      "sampleId": "sample-05",
+      "videos": {
+        "duoflow": "assets/videos/l2_s05_duoflow_r13ctc0testset.mp4",
+        "cosy": "assets/videos/l2_s05_cosy.mp4",
+        "match": "assets/videos/l2_s05_match.mp4",
+        "motionomni": "assets/videos/l2_s05_motionomni.mp4"
+      },
+      "l2": "First, the right elbow is bent with the right hand beside the head and index finger raised, then the right forearm reaches slightly forward as the wrist flexes downward. Next, the right hand repeatedly rises and falls near the right temple while the fingers alternately curl, pinch, and open. Then, the right arm lowers from the head toward the chest and thigh while the left hand begins lifting across the upper chest. Finally, the left forearm extends with the palm open, ending with the left hand near the left chest.",
+      "transcript": "And I don't mind it. I like going out. I love going out. So I don't mind it.",
+      "voice": "Female voice, conversational tone, clear articulation",
+      "l1": "Both hands make small pinching motions near the lower chest and lift beside the face; then the left arm extends outward, the right hand moves behind the back, and the body turns and takes several steps forward.",
+      "condition": "First, both elbows are bent and the hands make small pinching and curling motions near the lower chest. Next, the hands lower briefly toward the waist and then lift together to either side of the face with curved fingers. Then, the right fingertips touch the right temple while the left hand remains raised near the left shoulder. Finally, both forearms descend and the hands meet across the upper abdomen, ending loosely clasped with both elbows bent.",
+      "motion": "First, both elbows are bent and the hands make small pinching and curling motions near the lower chest. Next, the hands lower briefly toward the waist and then lift together to either side of the face with curved fingers. Then, the right fingertips touch the right temple while the left hand remains raised near the left shoulder. Finally, both forearms descend and the hands meet across the upper abdomen, ending loosely clasped with both elbows bent."
+    },
+    {
+      "name": "case6",
+      "sampleId": "sample-06",
+      "videos": {
+        "duoflow": "assets/videos/l2_s06_duoflow_r13ctc0testset.mp4",
+        "cosy": "assets/videos/l2_s06_cosy.mp4",
+        "match": "assets/videos/l2_s06_match.mp4",
+        "motionomni": "assets/videos/l2_s06_motionomni.mp4"
+      },
+      "l2": "First, the left elbow is bent with the left hand near the chest while the right arm is low, and both hands descend toward the hips with the palms opening. Next, the left hand lifts from the abdomen to extend forward with the fingers partly curled while the right hand remains low. Then, the torso straightens as both arms spread outward with open palms, and both hands rise beside the shoulders. Finally, both arms finish hanging beside the thighs with the upright stance centered.",
+      "transcript": "or how to lie, steal, and take advantage of your situation. I don't think that's the way we should behave. I think that a leader should be someone who represents the entire country without cutting down others based on personal beliefs.",
+      "voice": "Female voice, clear and steady tone, speaking at a moderate pace",
+      "l1": "The right hand opens outward near the waist and lowers; then the left arm lifts overhead, the right hand moves behind the back, and the body turns and steps to the left.",
+      "condition": "First, the right elbow is bent with the right hand near the waist, and the right palm rotates outward as the fingers spread. Next, the right forearm retracts and descends until both arms hang vertically beside the thighs. Then, the left elbow bends and the left hand rises from the hip, opening outward beside the waist with the fingers spread. Finally, the left hand lowers and both arms finish hanging beside the thighs with the upright stance centered.",
+      "motion": "First, the right elbow is bent with the right hand near the waist, and the right palm rotates outward as the fingers spread. Next, the right forearm retracts and descends until both arms hang vertically beside the thighs. Then, the left elbow bends and the left hand rises from the hip, opening outward beside the waist with the fingers spread. Finally, the left hand lowers and both arms finish hanging beside the thighs with the upright stance centered."
+    }
+  ],
+  "audcap": [
+    {
+      "name": "case1",
+      "sampleId": "sample-01",
+      "videos": {
+        "duoflow": "assets/videos/audcap_s01_duoflow_r13ctc0testset.mp4",
+        "cosy": "assets/videos/audcap_s01_cosy.mp4",
+        "match": "assets/videos/audcap_s01_match.mp4",
+        "motionomni": "assets/videos/audcap_s01_motionomni.mp4"
+      },
+      "l2": "First, both arms hang vertically beside the thighs. Next, the left elbow bends and the left forearm lifts toward the chest while the right arm remains lowered. Then, the right hand crosses toward the left shoulder as the left arm extends outward with the palm facing down. Finally, the left hand moves behind the back, the right arm lowers, and the body turns to the right before taking two steps forward.",
+      "transcript": "Many of my favorite places in the city have already been destroyed. A few of these favorite places in mine",
+      "voice": "Male voice, speaking in a slow, deliberate manner with pauses between phrases.",
+      "audcapVoice": "Female voice, speaking slowly and deliberately with pauses between phrases.",
+      "l1": "Both arms rise and open from the sides, and the hands begin alternating near the torso; then both arms sweep farther outward, move behind the back, and the body turns to walk away.",
+      "condition": "First, both arms hang vertically beside the thighs. Next, the elbows bend as both forearms lift and open outward toward waist and chest level. Then, the hands make alternating movements in front of the torso while the elbows remain bent. Finally, both elbows extend and the arms lower to hang vertically beside the thighs.",
+      "motion": "First, both arms hang vertically beside the thighs. Next, the elbows bend as both forearms lift and open outward toward waist and chest level. Then, the hands make alternating movements in front of the torso while the elbows remain bent. Finally, both elbows extend and the arms lower to hang vertically beside the thighs."
+    },
+    {
+      "name": "case2",
+      "sampleId": "sample-02",
+      "videos": {
+        "duoflow": "assets/videos/audcap_s02_duoflow_r13ctc0testset.mp4",
+        "cosy": "assets/videos/audcap_s02_cosy.mp4",
+        "match": "assets/videos/audcap_s02_match.mp4",
+        "motionomni": "assets/videos/audcap_s02_motionomni.mp4"
+      },
+      "l1": "The left hand opens beside the shoulder and both hands spread outward with palms up; then the right arm lifts overhead, the left hand moves behind the back, and the body turns to the right.",
+      "transcript": "So yeah, that's a benefit of face-to-face communication. But you can't always be in the same place with people, right? Because even for me personally, since coming to Japan, I've never",
+      "voice": "Female voice, conversational tone, clear articulation",
+      "audcapVoice": "Male voice, conversational tone, clear articulation",
+      "l2": "First, the person stands upright with both elbows bent and the hands touching at the upper abdomen. Next, the right forearm lifts beside the right shoulder as the upper body inclines slightly right, while the left hand remains near the torso. Then, the right palm turns downward and reaches forward as the left arm extends sideways with closed fingers. Finally, the right hand moves behind the right hip, the left hand stays extended in front of the chest, and the body remains tilted to the right.",
+      "condition": "The left hand opens beside the shoulder, both hands spread outward with palms up, and they return together at the upper abdomen.",
+      "motion": "The left hand opens beside the shoulder, both hands spread outward with palms up, and they return together at the upper abdomen."
+    },
+    {
+      "name": "case3",
+      "sampleId": "sample-03",
+      "videos": {
+        "duoflow": "assets/videos/audcap_s03_duoflow_r13ctc0testset.mp4",
+        "cosy": "assets/videos/audcap_s03_cosy.mp4",
+        "match": "assets/videos/audcap_s03_match.mp4",
+        "motionomni": "assets/videos/audcap_s03_motionomni.mp4"
+      },
+      "l1": "Both hands lower from a broad open pose beside the shoulders; then the hands separate, extend forward at shoulder height, move behind the back, and the torso turns to the left.",
+      "transcript": "or a place where people are going insane. Situations like this make me feel uncomfortable, especially when the place is too noisy or if I have been in an environment which is noisy for a long time.",
+      "voice": "Male voice, calm and conversational tone, clear articulation",
+      "audcapVoice": "Male voice, calm and conversational tone, speaking at a slow pace",
+      "l2": "First, the left hand is raised beside the left shoulder with the palm facing forward and the fingers spread, while the right hand rests near the waist. Next, the left forearm lowers across the chest as the right hand lifts toward the right shoulder with curled fingers. Then, the right arm extends outward with the palm facing down while the left hand moves behind the back. Finally, the torso turns to the right, the right hand remains raised beside the head, and the left hand settles behind the left hip.",
+      "condition": "Both hands lower from a broad open pose beside the shoulders and gradually close together over the upper abdomen.",
+      "motion": "Both hands lower from a broad open pose beside the shoulders and gradually close together over the upper abdomen."
+    },
+    {
+      "name": "case4",
+      "sampleId": "sample-04",
+      "videos": {
+        "duoflow": "assets/videos/audcap_s04_duoflow_r13ctc0testset.mp4",
+        "cosy": "assets/videos/audcap_s04_cosy.mp4",
+        "match": "assets/videos/audcap_s04_match.mp4",
+        "motionomni": "assets/videos/audcap_s04_motionomni.mp4"
+      },
+      "l1": "Both hands lower and rise into a broad palm-up opening; then the right arm reaches overhead, the left hand swings behind the back, and the body turns left and steps away.",
+      "transcript": "you watch the Harry Potter things, you see the Quidditch being filmed outside, you see those big arches, you see the towers. Those are the things that you can see. And that's the moment",
+      "voice": "Male voice, calm and narrative tone, clear articulation",
+      "audcapVoice": "Female voice, calm and narrative tone, clear articulation",
+      "l2": "First, the right hand is held near the lower chest and the left hand near the upper abdomen, then both hands descend toward the waist. Next, the right forearm lifts alone and opens beside the shoulder with the palm facing down while the left hand stays near the waist. Then, the left arm sweeps outward to shoulder height as the right hand retracts behind the back. Finally, the torso turns left, the left hand extends overhead with spread fingers, and the right hand remains behind the right hip.",
+      "condition": "Hands start at the chest, then rise into a broad palm-up opening, regroup, and lift near the shoulders before finishing close to the chest.",
+      "motion": "Hands start at the chest, then rise into a broad palm-up opening, regroup, and lift near the shoulders before finishing close to the chest."
+    },
+    {
+      "name": "case5",
+      "sampleId": "sample-05",
+      "videos": {
+        "duoflow": "assets/videos/audcap_s05_duoflow_r13ctc0testset.mp4",
+        "cosy": "assets/videos/audcap_s05_cosy.mp4",
+        "match": "assets/videos/audcap_s05_match.mp4",
+        "motionomni": "assets/videos/audcap_s05_motionomni.mp4"
+      },
+      "l2": "First, both elbows are bent and the hands make small tapping motions with flat palms near the lower chest. Next, the hands lower briefly toward the waist, then the left hand rises beside the left temple while the right forearm extends outward at shoulder height. Then, the left fingertips touch the left temple as the right palm turns downward and the fingers close together. Finally, the left hand remains near the head, the right hand moves behind the back, and the torso turns to the right with both elbows held away from the body.",
+      "transcript": "And I don't mind it. I like going out. I love going out. So I don't mind it.",
+      "voice": "Female voice, conversational tone, clear articulation",
+      "audcapVoice": "Male voice, calm and conversational tone, clear articulation",
+      "l1": "Both hands make small pinching motions near the lower chest and lift beside the face; then the left arm extends outward, the right hand moves behind the back, and the body turns and takes several steps forward.",
+      "condition": "First, both elbows are bent and the hands make small pinching and curling motions near the lower chest. Next, the hands lower briefly toward the waist and then lift together to either side of the face with curved fingers. Then, the right fingertips touch the right temple while the left hand remains raised near the left shoulder. Finally, both forearms descend and the hands meet across the upper abdomen, ending loosely clasped with both elbows bent.",
+      "motion": "First, both elbows are bent and the hands make small pinching and curling motions near the lower chest. Next, the hands lower briefly toward the waist and then lift together to either side of the face with curved fingers. Then, the right fingertips touch the right temple while the left hand remains raised near the left shoulder. Finally, both forearms descend and the hands meet across the upper abdomen, ending loosely clasped with both elbows bent."
+    },
+    {
+      "name": "case6",
+      "sampleId": "sample-06",
+      "videos": {
+        "duoflow": "assets/videos/audcap_s06_duoflow_r13ctc0testset_miranda_f2f.mp4?v=male_7d33895c80b4",
+        "cosy": "assets/videos/audcap_s06_cosy.mp4",
+        "match": "assets/videos/audcap_s06_match.mp4",
+        "motionomni": "assets/videos/audcap_s06_motionomni.mp4"
+      },
+      "l2": "First, the left elbow is bent with the left hand near the waist, and the left palm rotates outward as the fingers spread. Next, the left forearm retracts and descends until both arms hang vertically beside the thighs. Then, the right elbow bends and the right hand rises from the hip, opening outward beside the waist with the fingers spread. Finally, the right hand lowers and both arms finish hanging beside the thighs with the upright stance centered.",
+      "transcript": "or how to lie, steal, and take advantage of your situation. I don't think that's the way we should behave. I think that a leader should be someone who represents the entire country without cutting down others based on personal beliefs.",
+      "voice": "Female voice, clear and steady tone, speaking at a moderate pace",
+      "audcapVoice": "Male voice, clear tone, fast pace",
+      "l1": "The right hand opens outward near the waist and lowers; then the left arm lifts overhead, the right hand moves behind the back, and the body turns and steps to the left.",
+      "condition": "First, the right elbow is bent with the right hand near the waist, and the right palm rotates outward as the fingers spread. Next, the right forearm retracts and descends until both arms hang vertically beside the thighs. Then, the left elbow bends and the left hand rises from the hip, opening outward beside the waist with the fingers spread. Finally, the left hand lowers and both arms finish hanging beside the thighs with the upright stance centered.",
+      "motion": "First, the right elbow is bent with the right hand near the waist, and the right palm rotates outward as the fingers spread. Next, the right forearm retracts and descends until both arms hang vertically beside the thighs. Then, the left elbow bends and the left hand rises from the hip, opening outward beside the waist with the fingers spread. Finally, the left hand lowers and both arms finish hanging beside the thighs with the upright stance centered."
+    }
+  ]
+};
+
+  (function initDuoFlowPage() {
+    const revealTargets = document.querySelectorAll(".section, .demo-section, .contribution-card, .method-card, .result-card, .figure-card");
+    if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+        if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); }
+      }), { threshold: .12 });
+      revealTargets.forEach(target => { target.classList.add("reveal"); observer.observe(target); });
+    } else {
+      revealTargets.forEach(target => target.classList.add("is-visible"));
+    }
+
+    const attachVideo = (card, path) => {
+      const video = card.querySelector("video");
+      const placeholder = card.querySelector(".video-placeholder");
+      const code = placeholder.querySelector("code");
+      const title = placeholder.querySelector("strong");
+      const icon = placeholder.querySelector(".placeholder-icon");
+      video.onloadedmetadata = video.onloadeddata = video.oncanplay = video.onerror = null;
+      video.pause();
+      code.textContent = path || "DuoFlow render unavailable in this release";
+      placeholder.hidden = false;
+      if (!path) {
+        video.removeAttribute("src");
+        video.removeAttribute("controls");
+        video.removeAttribute("aria-busy");
+        video.load();
+        title.textContent = "DuoFlow render unavailable in this release";
+        icon.textContent = "◌";
+        return;
+      }
+      title.textContent = "Loading video…";
+      icon.textContent = "▶";
+      video.setAttribute("controls", "");
+      video.setAttribute("aria-busy", "true");
+      // Metadata is enough to expose native play controls with preload="metadata".
+      const revealVideo = () => {
+        placeholder.hidden = true;
+        video.removeAttribute("aria-busy");
+      };
+      video.onloadedmetadata = revealVideo;
+      video.onloadeddata = revealVideo;
+      video.oncanplay = revealVideo;
+      video.onerror = () => {
+        placeholder.hidden = false;
+        video.removeAttribute("aria-busy");
+        title.textContent = "Video unavailable";
+      };
+      video.src = path;
+      video.load();
+    };
+
+    const ORIGINAL_CONDITION = {
+      ...Object.fromEntries(DEMOS.comparison.map(item => [item.name, item.condition || item.motion || ""])),
+      case1: "First, both arms hang vertically beside the thighs. Next, the elbows bend as both forearms lift and open outward toward waist and chest level. Then, the hands make alternating movements in front of the torso while the elbows remain bent. Finally, both elbows extend and the arms lower to hang vertically beside the thighs."
+    };
+    const motionFields = new Set(["condition", "motion", "l1", "l2"]);
+    const getPromptValue = (groupName, item, fieldName) => {
+      if (groupName === "comparison" && fieldName === "condition") {
+        return ORIGINAL_CONDITION[item.name] || item[fieldName] || "";
+      }
+      if (groupName === "audcap" && fieldName === "motion") {
+        return ORIGINAL_CONDITION[item.name] || item[fieldName] || "";
+      }
+      if (groupName === "audcap" && fieldName === "voice") {
+        return item.audcapVoice || item[fieldName] || "";
+      }
+      return item[fieldName] || "";
+    };
+    const getControlOriginalValue = (groupName, item, fieldName) => {
+      if ((groupName === "l1" && fieldName === "l1") || (groupName === "l2" && fieldName === "l2")) {
+        return ORIGINAL_CONDITION[item.name] || item.condition || "";
+      }
+      return "";
+    };
+
+    const appendPromptContent = (parent, fieldName, value) => {
+      if (!motionFields.has(fieldName)) {
+        const text = document.createElement("span");
+        text.textContent = value;
+        parent.appendChild(text);
+        return;
+      }
+      const steps = value.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [value];
+      steps.map(step => step.trim()).filter(Boolean).forEach((step, index) => {
+        const item = document.createElement("span");
+        item.className = "prompt-step";
+        item.dataset.step = String(index + 1);
+        item.textContent = step;
+        parent.appendChild(item);
+      });
+    };
+
+
+    // These spans were reviewed for motion/voice meaning in each visible case.
+    // Exact text matching prevents stale annotations from marking a later edit.
+    const REVIEWED_PROMPT_DIFFS = {
+  "l1:case2:l1": {
+    "original": "The left hand opens beside the shoulder, both hands spread outward with palms up, and they return together at the upper abdomen.",
+    "updated": "The left hand rises palm-up near the shoulder, then the right hand lifts near the chest and turns palm-down.",
+    "removed": [
+      [
+        41,
+        127
+      ]
+    ],
+    "added": [
+      [
+        47,
+        107
+      ]
+    ]
+  },
+  "l1:case3:l1": {
+    "original": "Both hands lower from a broad open pose beside the shoulders and gradually close together over the upper abdomen.",
+    "updated": "Asymmetric hand gestures open beside the waist, alternate across the torso, and finish with both hands together near the upper abdomen.",
+    "removed": [
+      [
+        11,
+        60
+      ]
+    ],
+    "added": [
+      [
+        0,
+        74
+      ]
+    ]
+  },
+  "l1:case4:l1": {
+    "original": "Hands start at the chest, then rise into a broad palm-up opening, regroup, and lift near the shoulders before finishing close to the chest.",
+    "updated": "The right hand repeatedly touches the chest and opens palm-up, finishing near the shoulder with the thumb raised while the left arm hangs.",
+    "removed": [
+      [
+        0,
+        24
+      ],
+      [
+        66,
+        138
+      ]
+    ],
+    "added": [
+      [
+        0,
+        43
+      ],
+      [
+        63,
+        137
+      ]
+    ]
+  },
+  "l2:case1:l2": {
+    "original": "First, both arms hang vertically beside the thighs. Next, the elbows bend as both forearms lift and open outward toward waist and chest level. Then, the hands make alternating movements in front of the torso while the elbows remain bent. Finally, both elbows extend and the arms lower to hang vertically beside the thighs.",
+    "updated": "First, both elbows are bent with the hands near the waist and lower abdomen. Next, the hands alternately open outward from the torso and sweep back inward, with the palms turning up and down. Then, both hands draw together and overlap low at the abdomen. Finally, the right forearm rises diagonally across the torso so the right hand finishes near the upper chest while the left hand stays lower.",
+    "removed": [
+      [
+        0,
+        51
+      ],
+      [
+        113,
+        141
+      ],
+      [
+        208,
+        236
+      ],
+      [
+        238,
+        322
+      ]
+    ],
+    "added": [
+      [
+        0,
+        76
+      ],
+      [
+        156,
+        190
+      ],
+      [
+        192,
+        254
+      ],
+      [
+        255,
+        396
+      ]
+    ]
+  },
+  "l2:case5:l2": {
+    "original": "First, both elbows are bent and the hands make small pinching and curling motions near the lower chest. Next, the hands lower briefly toward the waist and then lift together to either side of the face with curved fingers. Then, the right fingertips touch the right temple while the left hand remains raised near the left shoulder. Finally, both forearms descend and the hands meet across the upper abdomen, ending loosely clasped with both elbows bent.",
+    "updated": "First, the right elbow is bent with the right hand beside the head and index finger raised, then the right forearm reaches slightly forward as the wrist flexes downward. Next, the right hand repeatedly rises and falls near the right temple while the fingers alternately curl, pinch, and open. Then, the right arm lowers from the head toward the chest and thigh while the left hand begins lifting across the upper chest. Finally, the left forearm extends with the palm open, ending with the left hand near the left chest.",
+    "removed": [
+      [
+        7,
+        102
+      ],
+      [
+        110,
+        220
+      ],
+      [
+        272,
+        329
+      ],
+      [
+        331,
+        452
+      ]
+    ],
+    "added": [
+      [
+        0,
+        169
+      ],
+      [
+        176,
+        239
+      ],
+      [
+        293,
+        419
+      ],
+      [
+        420,
+        520
+      ]
+    ]
+  },
+  "l2:case6:l2": {
+    "original": "First, the right elbow is bent with the right hand near the waist, and the right palm rotates outward as the fingers spread. Next, the right forearm retracts and descends until both arms hang vertically beside the thighs. Then, the left elbow bends and the left hand rises from the hip, opening outward beside the waist with the fingers spread. Finally, the left hand lowers and both arms finish hanging beside the thighs with the upright stance centered.",
+    "updated": "First, the left elbow is bent with the left hand near the chest while the right arm is low, and both hands descend toward the hips with the palms opening. Next, the left hand lifts from the abdomen to extend forward with the fingers partly curled while the right hand remains low. Then, the torso straightens as both arms spread outward with open palms, and both hands rise beside the shoulders. Finally, both arms finish hanging beside the thighs with the upright stance centered.",
+    "removed": [
+      [
+        11,
+        22
+      ],
+      [
+        40,
+        65
+      ],
+      [
+        81,
+        101
+      ],
+      [
+        135,
+        157
+      ],
+      [
+        287,
+        319
+      ],
+      [
+        320,
+        343
+      ]
+    ],
+    "added": [
+      [
+        11,
+        21
+      ],
+      [
+        39,
+        63
+      ],
+      [
+        74,
+        90
+      ],
+      [
+        96,
+        130
+      ],
+      [
+        201,
+        215
+      ],
+      [
+        225,
+        246
+      ],
+      [
+        291,
+        308
+      ],
+      [
+        312,
+        352
+      ],
+      [
+        358,
+        394
+      ]
+    ]
+  },
+  "audcap:case1:voice": {
+    "original": "Male voice, speaking in a slow, deliberate manner with pauses between phrases.",
+    "updated": "Female voice, speaking slowly and deliberately with pauses between phrases.",
+    "removed": [
+      [
+        0,
+        4
+      ]
+    ],
+    "added": [
+      [
+        0,
+        6
+      ]
+    ]
+  },
+  "audcap:case4:voice": {
+    "original": "Male voice, calm and narrative tone, clear articulation",
+    "updated": "Female voice, calm and narrative tone, clear articulation",
+    "removed": [
+      [
+        0,
+        4
+      ]
+    ],
+    "added": [
+      [
+        0,
+        6
+      ]
+    ]
+  },
+  "audcap:case2:voice": {
+    "original": "Female voice, conversational tone, clear articulation",
+    "updated": "Male voice, conversational tone, clear articulation",
+    "removed": [
+      [
+        0,
+        6
+      ]
+    ],
+    "added": [
+      [
+        0,
+        4
+      ]
+    ]
+  },
+  "audcap:case5:voice": {
+    "original": "Female voice, conversational tone, clear articulation",
+    "updated": "Male voice, calm and conversational tone, clear articulation",
+    "removed": [
+      [
+        0,
+        6
+      ]
+    ],
+    "added": [
+      [
+        0,
+        4
+      ],
+      [
+        12,
+        20
+      ]
+    ]
+  },
+  "audcap:case3:voice": {
+    "original": "Male voice, calm and conversational tone, clear articulation",
+    "updated": "Male voice, calm and conversational tone, speaking at a slow pace",
+    "removed": [
+      [
+        42,
+        60
+      ]
+    ],
+    "added": [
+      [
+        42,
+        65
+      ]
+    ]
+  },
+  "audcap:case6:voice": {
+    "original": "Female voice, clear and steady tone, speaking at a moderate pace",
+    "updated": "Male voice, clear tone, fast pace",
+    "removed": [
+      [
+        0,
+        6
+      ],
+      [
+        19,
+        30
+      ],
+      [
+        37,
+        64
+      ]
+    ],
+    "added": [
+      [
+        0,
+        4
+      ],
+      [
+        24,
+        33
+      ]
+    ]
+  }
+};
+
+    const appendSemanticDiffContent = (parent, fieldName, value, ranges, variant) => {
+      const steps = motionFields.has(fieldName)
+        ? value.match(/[^.!?。！？]+[.!?。！？]+|[^.!?。！？]+$/g) || [value]
+        : [value];
+      let offset = 0;
+      steps.forEach(text => {
+        const end = offset + text.length;
+        const step = motionFields.has(fieldName) ? document.createElement("span") : parent;
+        if (motionFields.has(fieldName)) step.className = "prompt-diff-step";
+        const boundaries = new Set([offset, end]);
+        ranges.forEach(([start, stop]) => {
+          if (start > offset && start < end) boundaries.add(start);
+          if (stop > offset && stop < end) boundaries.add(stop);
+        });
+        const sorted = [...boundaries].sort((a, b) => a - b);
+        sorted.slice(0, -1).forEach((start, index) => {
+          const stop = sorted[index + 1];
+          const content = value.slice(start, stop);
+          const changed = ranges.some(([a, b]) => start >= a && stop <= b);
+          if (changed) {
+            const mark = document.createElement("span");
+            mark.className = `prompt-token ${variant}`;
+            mark.textContent = content;
+            step.appendChild(mark);
+          } else {
+            step.appendChild(document.createTextNode(content));
+          }
+        });
+        if (motionFields.has(fieldName)) parent.appendChild(step);
+        offset = end;
+      });
+    };
+
+    const renderPromptDiff = (fieldName, original, updated, semanticKey) => {
+      const fragment = document.createDocumentFragment();
+      const annotation = REVIEWED_PROMPT_DIFFS[semanticKey];
+      const reviewed = annotation && annotation.original === original && annotation.updated === updated;
+      const layout = document.createElement("span");
+      layout.className = "prompt-diff";
+      [
+        ["Original", original, reviewed ? annotation.removed : [], "removed", "original"],
+        ["Modified", updated, reviewed ? annotation.added : [], "added", "updated"]
+      ].forEach(([label, text, ranges, variant, version]) => {
+        if (version === "updated") {
+          const arrow = document.createElement("span");
+          arrow.className = "prompt-diff-arrow";
+          arrow.textContent = "→";
+          layout.appendChild(arrow);
+        }
+        const box = document.createElement("span");
+        box.className = `prompt-version ${version}`;
+        const title = document.createElement("span");
+        title.className = "prompt-version-label";
+        title.textContent = label;
+        const content = document.createElement("span");
+        content.className = "prompt-diff-content";
+        appendSemanticDiffContent(content, fieldName, text, ranges, variant);
+        box.append(title, content);
+        layout.appendChild(box);
+      });
+      fragment.appendChild(layout);
+      return fragment;
+    };
+
+    const renderPromptValue = (fieldName, value, originalValue = "", forceDiff = false, semanticKey = "") => {
+      const fragment = document.createDocumentFragment();
+      if (!value) return fragment;
+      if (originalValue && (originalValue !== value || forceDiff)) return renderPromptDiff(fieldName, originalValue, value, semanticKey);
+      appendPromptContent(fragment, fieldName, value);
+      return fragment;
+    };
+
+    const buildTabs = (container, cases, onSelect) => {
+      container.replaceChildren();
+      cases.forEach((item, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `sample-tab${index === 0 ? " active" : ""}`;
+        button.textContent = `case${index + 1}`;
+        button.setAttribute("role", "tab");
+        button.setAttribute("aria-selected", index === 0 ? "true" : "false");
+        button.addEventListener("click", () => {
+          [...container.children].forEach((tab, i) => {
+            tab.classList.toggle("active", i === index);
+            tab.setAttribute("aria-selected", i === index ? "true" : "false");
+          });
+          onSelect(index);
+        });
+        container.appendChild(button);
+      });
+    };
+
+    const initializeGroup = (groupName, cases) => {
+      const panel = document.querySelector(`[data-demo-group="${groupName}"]`);
+      if (!panel) return;
+      const tabs = panel.querySelector(".sample-tabs");
+      const loadCase = (index) => {
+        panel.querySelectorAll("video").forEach(video => { video.pause(); video.currentTime = 0; });
+        const item = cases[index];
+        panel.querySelectorAll(".prompt-value[data-field]").forEach(field => {
+          const fieldName = field.dataset.field;
+          const forceDiff = groupName === "audcap" && fieldName === "voice";
+          field.replaceChildren(renderPromptValue(fieldName, getPromptValue(groupName, item, fieldName), getControlOriginalValue(groupName, item, fieldName) || (forceDiff ? item[fieldName] || "" : ""), forceDiff, `${groupName}:${item.name}:${fieldName}`));
+        });
+        panel.querySelectorAll("[data-slot]").forEach(card => attachVideo(card, item.videos[card.dataset.slot]));
+      };
+      const videos = () => [...panel.querySelectorAll("video")].filter(video => video.getAttribute("src") && !video.error);
+      panel.querySelector('[data-action="play"]').addEventListener("click", event => {
+        const allVideos = [...panel.querySelectorAll("video")];
+        const playable = videos();
+        if (!playable.length) return;
+        const shouldPause = playable.some(video => !video.paused);
+        if (shouldPause) { playable.forEach(video => video.pause()); event.currentTarget.textContent = "▶ Play aligned"; }
+        else { allVideos.forEach(video => { video.muted = true; video.setAttribute("muted", ""); }); const start = Math.min(...playable.map(video => Number.isFinite(video.currentTime) ? video.currentTime : 0)); playable.forEach(video => { try { video.currentTime = start; } catch (_) {} video.play().catch(() => {}); }); event.currentTarget.textContent = "❚❚ Pause"; }
+      });
+      panel.querySelector('[data-action="reset"]').addEventListener("click", () => {
+        panel.querySelectorAll("video").forEach(video => { video.pause(); try { video.currentTime = 0; } catch (_) {} });
+        panel.querySelector('[data-action="play"]').textContent = "▶ Play aligned";
+      });
+      buildTabs(tabs, cases, loadCase);
+      loadCase(0);
+    };
+
+    const CASE_FILTERS = {
+      l1: new Set(["case2", "case3", "case4"]),
+      l2: new Set(["case1", "case5", "case6"]),
+      audcap: new Set(["case2", "case4", "case6"])
+    };
+    Object.entries(DEMOS).forEach(([group, cases]) => {
+      const visibleCases = CASE_FILTERS[group] ? cases.filter(item => CASE_FILTERS[group].has(item.name)) : cases;
+      initializeGroup(group, visibleCases);
+    });
+  })();
+</script>
+</body>
+</html>
